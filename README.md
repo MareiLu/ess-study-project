@@ -7,11 +7,6 @@
   – Adds agea and interaction with region.
 
 🧠 3. How do perceptions of political competence (internal efficacy) differ between younger and older people across democracies?
-
-  A. Media use as a mediator
-  “Does political interest or media consumption mediate the age gap in political efficacy?”
-  
-  – Variables: agea, polcmpl, polintr, newsfreq or media trust variables.
   
   B. Digital divide question
   “Are younger people more politically competent because of greater media consumption, or despite lower political trust?”
