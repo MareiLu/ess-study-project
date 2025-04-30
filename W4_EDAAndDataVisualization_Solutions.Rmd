@@ -1,0 +1,197 @@
+---
+title: 'Data Science Week 4: Exploratory Data Analysis and Data Visualization'
+author: "Tom Zimmermann"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+```
+
+
+In this section, we look into exploratory data analysis and data visualization using the World Bank immunization dataset discussed in previous lectures.
+
+You can download the data from the course website or from the following url: https://osf.io/gk5cn/download
+
+
+
+0. Import the dataset into R
+
+```{r}
+# Insert code here
+
+dt = read_csv("https://osf.io/gk5cn/download")
+
+# End
+```
+
+
+1. Calculate the mean, median, the 5th and 95th quantile of the immunization rate variable (`imm` in the dataset) over non-missing values.
+
+```{r}
+# Insert code here
+
+# Here are a couple of built-in functions that let you compute these quantities
+mean(dt$imm, na.rm = TRUE)
+median(dt$imm, na.rm = TRUE)
+quantile(dt$imm, .05, na.rm = TRUE)
+quantile(dt$imm, .95, na.rm = TRUE)
+
+# Can you use these functions within dplyr? This would make life easier for some of the next exercises.
+dt %>% 
+  summarise(meanIMM   = mean(imm, na.rm = TRUE),
+            medianIMM = median(imm, na.rm = TRUE),
+            Q5IMM     = quantile(imm, .05, na.rm = TRUE),
+            Q95IMM    = quantile(imm, .95, na.rm = TRUE))
+
+# End
+```
+
+
+
+3. Calculate different measures of spread of `imm`: Calculate the range, the interquartile range and the standard deviation of `imm` *in 2017*.
+
+```{r}
+# Insert code here
+dt %>% 
+  filter(year == 2017) %>% 
+  summarise(range = max(imm, na.rm = TRUE) -  min(imm, na.rm = TRUE),
+            IQR   = quantile(imm, .75, na.rm = TRUE) - quantile(imm, .25, na.rm = TRUE),
+            SD    = sd(imm, na.rm = TRUE))
+
+# End
+```
+
+3. Calculate mean-median skewness of `imm` for each year in the data separately using the formula in the slides.
+
+```{r}
+# Insert code here
+dt %>% 
+  group_by(year) %>% 
+  summarise(Skew = (mean(imm, na.rm = TRUE) - median(imm, na.rm = TRUE))/sd(imm, na.rm = TRUE))
+
+# End
+```
+
+
+4. Repeat question 1 but compute summary statistics for each year separately. Has the mean immunization rate increased or decreased over time?
+
+```{r}
+# Insert code here
+
+dt %>% 
+  group_by(year) %>% 
+  summarise(meanIMM   = mean(imm, na.rm = TRUE),
+            medianIMM = median(imm, na.rm = TRUE),
+            Q5IMM     = quantile(imm, .05, na.rm = TRUE),
+            Q95IMM    = quantile(imm, .95, na.rm = TRUE))
+
+# End
+```
+
+5. Plot histograms of `gdppc` and `imm` in 2017. Do any observations look strange to you? Also explore the effect of the number of bins.
+
+```{r}
+# Insert code here
+
+#gddpc
+dt %>% filter(year == 2017) %>% 
+  ggplot(aes(x = gdppc)) +
+  geom_histogram(binwidth = 2000)
+
+dt %>% filter(year == 2017) %>% 
+  ggplot(aes(x = gdppc)) +
+  geom_histogram(binwidth = 100)
+
+#imm
+dt %>% 
+  filter(year == 2017) %>% 
+  ggplot(aes(imm)) +
+  geom_histogram(binwidth = 1)
+
+dt %>% 
+  filter(year == 2017) %>% 
+  ggplot(aes(imm)) +
+  geom_histogram(binwidth = 10)
+
+# End
+```
+
+
+6. Use your results from question 4 to plot mean immunization rates over time.
+
+```{r}
+# Insert code here
+
+dt %>% 
+  group_by(year) %>% 
+  summarise(meanIMM = mean(imm, na.rm = TRUE)) %>% 
+  ggplot(aes(x = year, y = meanIMM)) +
+  geom_point() +
+  geom_line()
+
+
+# Alternatively
+dt %>% 
+  ggplot(aes(x = year, y = imm)) +
+  stat_summary_bin()  # Calculates mean and se for each year by default
+
+# End
+```
+
+6. Create a scatter plot with `gdppc` on the x-axis and `imm` on the y-axis to explore the relationship between these two variables in 2017. (It might be useful to plot `gdppc` on a log scale)
+
+
+```{r}
+# Insert code here
+dt %>% 
+  filter(year == 2017) %>% 
+  ggplot(aes(x = gdppc, y = imm)) +
+  geom_point() +
+  scale_x_log10()
+
+# End
+```
+
+7. Extend your plot from the previous part to include data from the years 2000 and 2017. Use different colors for each year.
+
+```{r}
+# Insert code here
+
+dt %>% 
+  filter(year == 2000 | year == 2017) %>% 
+  ggplot(aes(x = gdppc, y = imm, color = as.factor(year))) +
+  geom_point() +
+  scale_x_log10()
+
+# End
+```
+
+8. Prettify the plot in part 7 by e.g. adding proper axis labels, title, caption or legend.
+
+```{r}
+# Insert code here
+
+dt %>% 
+  filter(year == 2000 | year == 2017) %>% 
+  ggplot(aes(x = gdppc, y = imm, color = as.factor(year))) +
+  geom_point() +
+  scale_x_log10(labels = scales::dollar) +
+  theme_minimal(base_size = 18) +
+  labs(x = "GDP Per Capita",
+       y = "Immunization rate",
+       title = "GDP and Immunization Rates",
+       subtitle = "Data points are country-years",
+       caption = "Source: World Bank.",
+       color = '')
+
+# End
+```
+

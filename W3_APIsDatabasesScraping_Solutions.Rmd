@@ -1,0 +1,193 @@
+---
+title: 'Data Science Week 3: Data Acquision'
+author: "Tom Zimmermann"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+```
+
+
+In this week's lab, we try various ways of acquiring data and getting them into R. 
+
+
+# APIs
+
+Google Trends (https://trends.google.com/trends/) lets you explore what people all over the world have been searching for on Google. 
+
+1. Take a look at the website and check how search volume for "Inflation" in Germany has evolved over the past 5 years.
+
+
+2. Google provides an API to interact with their data that you just looked at via the browser. `gtrendsR` is a simple-to-use R package that facilitates getting the data into R. Install the package.
+
+```{r}
+# Insert code here
+
+install.packages("gtrendsR")
+
+# End
+```
+
+
+3. Use the package to download search volume for "Inflation" for Germany over the past five years. Note that the data that are returned by the API call are *weekly* with the `date` variable indicating the start date of the week.
+
+What was search interest during the week starting on Oct 20, 2019 and what was search interest during the week of Oct 23, 2023?
+
+
+```{r}
+# Insert code here
+library(gtrendsR)
+
+inflationDE <- gtrends(keyword = "inflation", 
+                       geo = "DE", 
+                       time = "today+5-y")
+
+# Find search interest in the specified week either programmatically or by looking at the downloaded table.
+inflationDE$interest_over_time %>% 
+  filter(date == as.Date('2019-10-20'))
+
+inflationDE$interest_over_time %>% 
+  filter(date == as.Date('2023-10-23'))
+
+# End
+```
+
+
+4. Compare search volume for "Inflation" between Germany and the United States, i.e. download search volume data for both countries over the past 5 years. Plot both series.
+
+```{r}
+# Insert code here
+
+inflationDE_US <- gtrends(keyword = "inflation", 
+                          geo = c("DE", "US"), 
+                          time = "today+5-y")
+
+plot(inflationDE_US)
+
+# End
+```
+
+
+
+# Databases
+
+Download the file `RealEstate.db` from ILIAS. This is a database file that contains three different tables. Save the file locally and connect to the database via
+
+```{r, eval=FALSE}
+library(DBI)
+library(RSQLite)
+db <- dbConnect(RSQLite::SQLite(), "W3_RealEstate.db")
+# Adjust path to the database file to wherever you saved it
+
+# If it worked, you should see 3 tables listed here
+dbListTables(db)
+
+# To select the first 10 observations from the table "Rents", you can then use
+rents <- dbGetQuery(db, "SELECT * 
+                FROM Rents
+                LIMIT 10")
+
+
+# End
+```
+
+
+1. Select the first 100 observations of the table Rents. How many variables does the table contain?
+
+```{r, eval=FALSE}
+# Insert code here
+
+rents <- dbGetQuery(db, "SELECT * 
+                FROM Rents
+                LIMIT 100")
+
+rents 
+ncol(rents) # 13 variables
+
+# End
+```
+
+
+2. `SELECT COUNT(*)` can be used to count the number of rows of a table. How many rows does the `Rents` table have?
+
+
+```{r}
+# Insert code here
+
+dbGetQuery(db, "SELECT COUNT(*) 
+                FROM Rents")
+
+
+# End
+```
+
+
+3. How many apartments in the table `Rents` have a balcony?
+
+```{r}
+# Insert code here
+
+dbGetQuery(db, "SELECT * 
+                FROM Rents 
+                WHERE dum_balcony = 1")
+
+dbGetQuery(db, "SELECT COUNT(*) 
+                FROM Rents 
+                WHERE dum_balcony = 1")
+
+# End
+```
+
+
+4. The `Weather` table contains weather data for different weather stations in Germany. The first column of that table (`s_id`) denotes a weather station's unique id. The `WeatherStations` table contains static information of each weather station and the unique id `s_id`. Join the `WeatherStations` table onto the `Weather` table using the station id.
+
+
+```{r}
+# Insert code here
+
+dbGetQuery(db, "SELECT *
+                FROM Weather
+                LEFT JOIN WeatherStations
+                ON Weather.s_id = WeatherStations.s_id
+                ")
+
+
+# End
+```
+
+
+# Web scraping
+
+To practice web scraping, take a look at the following table on populatoin by age on Wikipedia: https://en.wikipedia.org/wiki/List_of_countries_by_age_structure
+
+1. Adjust the code in the lecture notes to read the table into R via `rvest`. Hint: The CSS selector is ".wikitable".
+
+```{r}
+# Insert code here
+
+library(rvest)
+
+url_data <- "https://en.wikipedia.org/wiki/List_of_countries_by_age_structure" 
+css_selector <- ".wikitable"
+
+url_data %>%
+  read_html() %>% 
+  html_element(css = css_selector) %>% 
+  html_table()
+
+# End
+```
+
+
+
+
+
+

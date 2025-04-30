@@ -1,0 +1,124 @@
+---
+title: 'Data Science Week 6: Multivariate linear regression'
+author: "Tom Zimmermann"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+```
+
+
+In this section, we look at multivariate linear regression using birthweight data of around 4,300 newborns in the United States. An important question is whether paternal characteristics and behavior are associated with birthweight. Download the dataset `W6_Birthweight.csv` from the course website.
+
+
+1. Load the data.
+
+```{r}
+# Insert code here
+
+df_birthweight <- read_csv("W6_Birthweight.csv")
+
+# End
+```
+
+
+2. Make a scatter plot and a binscatter of the relationship between mother's age `mage` (x-axis) and `bweight` (y-axis).
+
+```{r}
+# Insert code here
+
+# Scatter
+df_birthweight %>% 
+  ggplot(aes(x = mage, y = bweight)) +
+  geom_point()
+
+# Binscatter
+df_birthweight %>% 
+  ggplot(aes(x = mage, y = bweight)) +
+  stat_summary_bin()
+
+
+# End
+```
+
+3. Estimate a linear regression of `bweight` on `mage` and a constant $$bweight^E= \alpha + \beta mage$$. Interpret $\beta$.
+
+```{r}
+# Insert code here
+
+fitLM1 <- lm(bweight ~ mage, 
+             data = df_birthweight)
+summary(fitLM1)
+
+# Interpretation of beta hat: An additional year in maternal age is associated with higher birthweight of about 10 grams.
+
+# End
+```
+
+
+4. In addition to age, we are interested in the effect of maternal smoking during pregnancy. Estimate the regression $$bweight^E  = \alpha + \beta mbsmoke$$. How do you interpret the estimated $\beta$?
+
+```{r}
+# Insert code here
+
+fitLM2 <- lm(bweight ~ mbsmoke, 
+             data = df_birthweight)
+summary(fitLM2)
+
+# Interpretation of beta hat: Smoking is associated with a lower birthweight of about 276 grams.
+
+# End
+```
+
+
+5. Check whether the effect of smoking differs by maternal age. Estimate a regression with an interaction $$bweight^E = \beta_0 + \beta_1 mage + \beta_2 mbsmoke + \beta_3 mage \times mbsmoke$$
+
+Estimate the model and interpret $\beta_1, \beta_2$ and $\beta_3$.
+
+```{r}
+# Insert code here
+
+fitLM4 <- lm(bweight ~ mage + mbsmoke + mage*mbsmoke, 
+             data = df_birthweight)
+summary(fitLM4)
+
+
+# Interpretation:  
+
+# - beta1 is the slope coefficient for non-smokers: An additional year of maternal age is associated with an increase in birthweight of about 10 grams. 
+
+# - This relationship reverses for smokers: An additional year of maternal age is associated with a decrease in birthweight of about 5 grams (beta1 + beta3 is the slope coefficient for smokers)
+
+# Technically, beta0 is the expected birthweight at maternal age 0 (recall that linear regression can make predictions at any value, also implausible ones), 3142 grams. beta2 is the difference in expected birthweights at maternal age 0 between smokers and non-smokers. Here, at maternal age 0, the regression predicts higher birthweight for smokers by 145 grams.
+
+
+
+# End
+```
+
+6. Plot the bweight-age data together with the two regression lines for smokers and non-smokers estimated in part 5.
+
+
+```{r}
+# Insert code here
+
+df_birthweight %>% 
+  mutate(mbsmoke = as_factor(mbsmoke)) %>% 
+  ggplot(aes(x = mage, y = bweight, group = mbsmoke, color = mbsmoke)) + 
+  geom_point() + 
+  geom_smooth(method = 'lm', formula = y~x)
+
+
+# End
+```
+
+
+

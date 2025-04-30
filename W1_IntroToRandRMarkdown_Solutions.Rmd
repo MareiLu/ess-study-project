@@ -1,0 +1,153 @@
+---
+title: 'Data Science Week 1: Intro to R and R Markdown'
+author: "Tom Zimmermann"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+    number_sections: yes
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(repos = list(CRAN="http://cran.rstudio.com/"))
+```
+
+
+In this section, we want to take a first look at the Vienna hotels dataset introduced in the lecture. 
+
+```{r}
+# Housekeeping
+#install.packages("tidyverse")
+#install.packages("rmarkdown")
+#install.packages("knitr")
+#install.packages("data.table")
+
+# Set working directory (in case it's needed)
+# setwd("")
+```
+
+# Loading data
+
+## Reading a csv file
+
+`csv` files are a simple way to import data into different software. Read the `W1_HotelsVienna.csv` file using three different methods: Use the standard `read.csv` function, the `read_csv` function from the `readr` package and the `fread` function from the `data.table` package.
+
+```{r}
+# Insert code here
+
+library(readr)
+library(data.table)
+
+dt1 <- read.csv(file = "W1_HotelsVienna.csv")
+dt2 <- read_csv(file = "W1_HotelsVienna.csv")
+dt3 <- fread(file = "W1_HotelsVienna.csv")
+
+# End
+```
+
+
+## Reading a foreign file
+
+Sometimes files are only available in a software-specific format. Read the `W1_HotelsVienna.dta` file using the `read_dta` function from the `haven` package.
+
+```{r}
+# Insert code here
+
+library(haven)
+
+dt4 <- read_dta(file = "W1_HotelsVienna.dta")
+
+# End
+```
+
+
+## Reading a file directly from the internet
+
+Instead of downloading and saving a file locally first, you can also read files from the internet directly. For example, the URL for the `W1_HotelsVienna.csv` dataset is https://osf.io/y6jvb/download . Import the file directly using `read_csv`.
+
+
+```{r}
+# Insert code here
+
+dt5 <- read_csv("https://osf.io/y6jvb/download")
+
+# End
+```
+
+
+# Data structures
+
+Load the Vienna hotels data with any method you like into an object called `dt`.
+
+```{r}
+# 
+dt <- read_csv("https://osf.io/y6jvb/download")
+
+# End
+```
+
+
+0. Does the table contain cross-sectional or time-series data?
+
+Cross-sectional data: many different hotels (units) observed at the same time (weekday Nov 2017)
+
+1. What is the data type of the `neighbourhood` column in the data?
+
+```{r}
+# Insert code here
+
+class(dt$neighbourhood)
+
+# End
+```
+
+2. The `str()` function is helpful to get a quick overview of the different variable values and variable types. How many variables of type `character` are in the data?
+
+```{r}
+# Insert code here
+
+str(dt)
+table(sapply(dt, class))
+
+# End
+```
+
+3. Add a variable `Number total ratings` as the sum of the `rating_count` and `ratingta_count` variables.
+
+```{r}
+# Insert code here
+
+dt$number_total_ratings <- (dt$rating_count + dt$ratingta_count)
+
+# End
+```
+
+4. Create a vector named `offers` with the first 10 elements of the `offer_cat` variable and another vector named `city` with the first element of the `city_actual` variable.
+
+```{r}
+# Insert code here
+
+offers <- dt$offer_cat[1:10]
+city   <- dt$city_actual[1]
+
+# End
+```
+
+5. Combine your vectors `offers` and `city` into a list.
+
+```{r}
+# Insert code here
+
+my_list <- list(offers = offers, city = city)
+my_list
+
+# End
+```
+
+
+
+
+

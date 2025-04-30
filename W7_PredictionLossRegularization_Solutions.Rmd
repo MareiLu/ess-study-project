@@ -1,0 +1,192 @@
+---
+title: 'Data Science Week 7: Predictions, generalization errors and regularization'
+author: "Tom Zimmermann"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+```
+
+
+The goal of this lab is to guide you through a short data science workflow. We want to predict apartment prices for AirBNB apartments in one borough of London (Westminster). You can download the data from the course website. The data consist of the outcome variable `price` and various features that can be used to predict prices. 
+
+1. Load the data.
+
+```{r}
+# Insert code here
+dt = read_csv('W7_AirBNB.csv')
+# End
+```
+
+
+2. We start with a very simple linear model that only includes one regressor: $price^E = \alpha + \beta \times n\_guests\_included$. Estimate this model on all data.
+
+
+```{r}
+# Insert code here
+
+LM1 <- lm(price ~ n_guests_included, 
+          data = dt)
+summary(LM1)
+
+
+# Alternatively, treat number of guests as categorical
+LM1a <- lm(price ~ factor(n_guests_included), data = dt)
+summary(LM1a)
+
+
+# End
+```
+
+
+3. Based on your model estimates, add a predicted price for each observation to your dataset.
+
+
+```{r}
+# Insert code here
+
+dt <- dt %>% 
+  mutate(predicted_priceLM1 = predict(LM1, 
+                                      newdata = .))
+
+# End
+```
+
+
+4. What is the MSE over all predictions of your model? 
+
+```{r}
+# Insert code here
+
+dt %>% 
+  summarise(MSE = mean( (predicted_priceLM1 - price)^2))
+
+# End
+```
+
+
+5. Run the code in the next cell and understand what it does.
+
+```{r}
+set.seed(123) # Sets a seed for the pseudo-randomization
+
+dt = dt %>% 
+  # Adds a variable CVtwofold randomly equal to 1 or 2 with equal probabilities.
+  # Intuitively, this variable defines our folds for cross-validation.
+   mutate(CVtwofold = sample(x = c(1, 2), size = nrow(.), replace = TRUE, prob = c(.5, .5)))
+
+```
+
+
+
+6. Estimate the model from part 2 again but now only on the data for which `CVtwofold` is equal to 1.
+
+
+```{r}
+# Insert code here
+
+LM2 <- lm(price ~ n_guests_included, 
+          data = dt %>% filter(CVtwofold == 1))
+summary(LM2)
+
+# End
+```
+
+
+7. What is the MSE of your predictions for those observations with `CVtwofold = 1` and for those with `CVtwofold = 2`? Why are the two different? Why is this not quite two-fold cross-validation yet?
+
+```{r}
+# Insert code here
+
+# Add predictions
+dt = dt %>% 
+  mutate(predicted_priceLM2 = predict(LM2, newdata = .))
+
+# Compute MSE
+dt %>% 
+  group_by(CVtwofold) %>% 
+  summarise(MSE = mean( (predicted_priceLM2 - price)^2))
+
+
+# For 2-fold CV: We also need to train on the data where CVtwofold = 2, calculate the MSE again (on CVtwofold = 1) and then take the average of the MSEs to get the cross-validated MSE.
+
+# End
+```
+
+
+8. The code below calculates the cross-validated mean squared error. Understand what each part does, in particular add comments at each #.
+
+```{r}
+# Insert code here
+
+MSE = c()
+for (fold in c(1, 2)) {
+  
+  # Fit on all but left-out folds
+  fitLM = lm(price ~ n_guests_included,
+             data = dt %>% 
+               filter(CVtwofold != fold)
+             )
+  
+  # Predict on left-out fold
+  yhat = predict(fitLM, newdata = dt %>% 
+                   filter(CVtwofold == fold))
+  
+  y = dt %>% 
+    filter(CVtwofold == fold) %>% 
+    pull(price)
+  
+  # Calculate MSE on left-out fold
+  MSE[fold] = mean( (yhat - y)^2)
+  
+}
+
+# Cross-validated mean squared error
+mean(MSE)
+
+
+# End
+```
+
+
+9. Adjust the code in part 8 and add `room_type` and `d_familykidfriendly` as additional features to your linear regression. What is the cross-validated MSE?
+
+```{r}
+# Insert code here
+
+MSE = c()
+for (fold in c(1, 2)) {
+  
+  # Fit on all but left-out folds
+  fitLM = lm(price ~ n_guests_included + room_type + d_familykidfriendly,
+             data = dt %>% 
+               filter(CVtwofold != fold)
+             )
+  
+  # Predict on left-out fold
+  yhat = predict(fitLM, newdata = dt %>% 
+                   filter(CVtwofold == fold))
+  
+  y = dt %>% 
+    filter(CVtwofold == fold) %>% 
+    pull(price)
+  
+  # Calculate MSE on left-out fold
+  MSE[fold] = mean( (yhat - y)^2)
+  
+}
+
+# Cross-validated mean squared error
+mean(MSE)
+
+
+# End
+```

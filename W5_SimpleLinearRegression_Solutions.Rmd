@@ -1,0 +1,121 @@
+---
+title: 'Data Science Week 5: Simple linear regression'
+author: "Tom Zimmermann"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+includeSolutions = FALSE
+library(tidyverse)
+```
+
+
+
+In this section, we look at simple linear regression using the World Bank life expectancy dataset from DABEP.
+You can download the data from the course website or from the following url: https://osf.io/sh9mu/download
+
+
+1. Load the data and keep only observations from the year 2017.
+
+```{r}
+# Insert code here
+
+df_worldbank <- read_csv("https://osf.io/sh9mu/download") %>% 
+  filter(year == 2017)
+
+# End
+```
+
+
+2. Make a scatter plot of `gdppc` (x-axis) against `lifeexp` (y-axis). Add a linear regression line. Do you think this is a good fit?
+
+
+```{r}
+# Insert code here
+df_worldbank %>% 
+  ggplot(aes(x = gdppc, y = lifeexp)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = FALSE, formula = y~x)
+
+
+
+# End
+```
+
+3. Redo the plot with regression line but now use the natural log of `gdppc` as x variable. What do you think about the fit now?
+
+```{r}
+# Insert code here
+df_worldbank %>% 
+  ggplot(aes(x = log(gdppc), y = lifeexp)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = FALSE, formula = y~x)
+
+
+# End
+```
+
+
+4. Estimate the linear regression $lifeexp^E = \alpha + \beta ln(gdppc)$ and provide results. How do you interpret $\hat{\beta}$?
+
+```{r}
+# Insert code here
+
+fitLM1 <- lm(formula = lifeexp ~ log(gdppc), 
+             data = df_worldbank)
+
+summary(fitLM1)
+
+# A 1% increase in GDP p.c. is associated with an increase in life expectancy of 0.053336 years on average. 
+
+# End
+```
+
+4. Estimate the linear regression $lifeexp^E = \alpha + \beta gdppc$ (no log). How do you interpret $\hat{\beta}$? Does this model provide a better or worse fit than the model in part 3 based on comparing their R$^2$s?
+
+```{r}
+# Insert code here
+
+fitLM2 <- lm(formula = lifeexp ~ gdppc, 
+             data = df_worldbank)
+
+summary(fitLM2)
+
+# End
+```
+
+5. Expand the regression in part 4 by adding a quadratic term in `gdppc`, that is, estimate the model $lifeexp^E = \alpha + \beta_1 gdppc + \beta_2 gdppc^2$. Do the estimates suggest an inverted U-shaped relationship? Does this model provide a better or worse fit than the model in part 4 based on comparing their R$^2$s?
+
+```{r}
+# Insert code here
+
+fitLM3 <- lm(formula = lifeexp ~ gdppc + I(gdppc^2), 
+             data = df_worldbank)
+
+summary(fitLM3)
+
+# End
+```
+
+6. Plot the quadratic function estimated in part 5 together with the scatter and the linear model from part 2.
+
+
+```{r}
+# Insert code here
+df_worldbank %>% 
+  ggplot(aes(x = gdppc, y = lifeexp)) +
+  geom_point() + 
+  geom_smooth(method = lm, formula = y~x, se = FALSE, colour = 'blue') +
+  geom_smooth(method = lm, formula = y ~ x + I(x^2), se = FALSE, color = 'orange') +
+  theme_bw()
+
+
+# End
+```

@@ -1,0 +1,123 @@
+---
+title: 'Data Science Week 2: Data Wrangling with Tidyverse'
+author: "Tom Zimmermann"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+```
+
+
+In this section, we want to practice data wrangling with `tidyverse` functions. We use the World Bank immunization dataset discussed in the lecture.
+You can download the data from the course website or from the following url: https://osf.io/gk5cn/download
+
+
+1. Read the data with `read_csv`.
+
+```{r}
+# Insert code here
+
+worldBank <- read_csv(url("https://osf.io/gk5cn/download"))
+
+# End
+```
+
+
+
+2. Create a new table with only the columns `year`, `countryname`, `imm` and `pop`.
+
+
+```{r}
+# Insert code here
+
+worldBank2 <- worldBank %>% 
+  select(year, countryname, imm, pop)
+
+# End
+```
+
+3. Population is measured in millions. Add a new variable to `worldBank2` that measures population in 1000s.
+
+```{r}
+# Insert code here
+
+worldBank2 <- worldBank2 %>% 
+  mutate(pop_1000 = pop*1000)
+
+# End
+```
+
+
+4. Calculate the mean and median immunization rates over all countries from your table `worldBank2`.
+
+```{r}
+# Insert code here
+
+worldBank2 %>% 
+  summarise(mean_imm   = mean(imm), 
+            median_imm = median(imm))
+
+# End
+```
+
+
+5. Calculate the mean and median immunization rates over all countries *for each year separately*.
+
+```{r}
+# Insert code here
+
+worldBank2 %>% 
+  group_by(year) %>% 
+  summarise(across(imm, 
+                   list(mean   = mean, 
+                        median = median)))
+
+# End
+```
+
+
+6. Create two tables that both include `year` and `countryname`. One table (call it `df_pop`) includes population as only additional variable. One table (`df_imm`) includes the measle immunization rate as only additional variable.
+
+```{r}
+# Insert code here
+
+df_pop <- worldBank %>% 
+  select(year, countryname, pop)
+df_imm <- worldBank %>% 
+  select(year, countryname, imm)
+
+# End
+```
+
+
+7. Change `df_imm` such that it does only include observations from the year 2017.
+
+```{r}
+# Insert code here
+
+df_imm <- df_imm %>% 
+  filter(year == 2017)
+
+# End
+```
+
+8. Join `df_imm` onto `df_pop` using a `left_join`. Try again and use an `inner_join`. Note how the results differ.
+
+```{r}
+# Insert code here
+
+df_joined_1 <- left_join(df_pop, df_imm)
+df_joined_2 <- inner_join(df_pop, df_imm)
+
+# With left_join all rows in x (so df_pop) are included. With inner_join, only rows that show up in both x and y (so in df_pop and df_imm) are included.
+
+# End
+```

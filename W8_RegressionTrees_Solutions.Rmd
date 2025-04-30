@@ -1,0 +1,181 @@
+---
+title: 'Data Science Week 8: Regression Trees'
+author: "Tom Zimmermann"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+
+```
+
+This week we continue our analysis of AirBNB apartment prices in London using the same data as last week (`W7_AirBNB.csv`).
+
+0. Load the data.
+
+```{r}
+# Insert code here
+dt = read_csv('W7_AirBNB.csv')
+
+# End
+```
+
+1. Below, I split the data into a training set and a test set. Run the cell and understand what it does (no coding on your end required in this part). The approach is slightly different from last week's.)
+
+```{r}
+set.seed(123)
+
+dt = dt %>% 
+  mutate(TrainTest = sample(x = c('Train', 'Test'),
+                            size = nrow(.),
+                            prob = c(.7, .3), 
+                            replace = TRUE)
+  )
+
+dt_train = dt %>% 
+  filter(TrainTest == 'Train') %>% 
+  select(-TrainTest)
+
+dt_test = dt %>% 
+  filter(TrainTest == 'Test') %>% 
+  select(-TrainTest)
+
+# Check whether this worked (you should see 1519 observations assigned to Test and 3560 to Train)
+nrow(dt_train)
+nrow(dt_test)
+```
+
+2. Estimate a regression tree to predict `price` using all other variables in the dataset. Use the training data (`dt_train`) only to grow the tree. Leave all hyperparameters at their default values except for `maxdepth`, the maximum depth of the tree. Set `maxdepth = 4`. (I set the `cp' parameter to .001).
+
+```{r}
+# Insert code here
+library(rpart)
+
+fitTree <- rpart(price ~ .,
+                 data = dt_train,
+                 method = "anova",
+                 control = list(maxdepth =4, cp = .001))
+
+
+# End
+```
+
+
+3. Plot the estimated tree.
+
+
+```{r}
+# Insert code here
+library(rpart.plot)
+rpart.plot(fitTree, box.palette="RdBu", extra = 101)
+
+# End
+```
+
+
+4. Use your tree to predict prices in the training and the test data and calculate the mean squared error for training and test data separately.
+
+
+```{r}
+# Insert code here
+
+dt_train %>% 
+  mutate(yhat = predict(fitTree, newdata = .)) %>% 
+  summarise(MSE = mean( (yhat - price)^2))
+
+dt_test %>% 
+  mutate(yhat = predict(fitTree, newdata = .)) %>% 
+  summarise(MSE = mean( (yhat - price)^2))
+
+# End
+```
+
+5. How does the mean squared error on the test data change if you use `maxdepth = 3` or `maxdepth = 5`? (Remember to use only the training data for growing the tree)
+
+```{r}
+# Insert code here
+
+fitTree2 <- rpart(price ~ .,
+                 data = dt_train,
+                 method = "anova",
+                 control = list(maxdepth = 3, cp = .001))
+
+dt_train %>% 
+  mutate(yhat = predict(fitTree2, newdata = .)) %>% 
+  summarise(MSE = mean( (yhat - price)^2))
+
+dt_test %>% 
+  mutate(yhat = predict(fitTree2, newdata = .)) %>% 
+  summarise(MSE = mean( (yhat - price)^2))
+
+
+# Max depth = 5
+fitTree3 <- rpart(price ~ .,
+                 data = dt_train,
+                 method = "anova",
+                 control = list(maxdepth = 5, cp = .001))
+
+dt_train %>% 
+  mutate(yhat = predict(fitTree3, newdata = .)) %>% 
+  summarise(MSE = mean( (yhat - price)^2))
+
+dt_test %>% 
+  mutate(yhat = predict(fitTree3, newdata = .)) %>% 
+  summarise(MSE = mean( (yhat - price)^2))
+
+
+# End
+```
+
+
+6. Set `maxdepth = 30` and estimate the tree on the training data. Then prune it back using `cp = .005`. Plot the resulting tree. What is the mean squared error of this tree on the test data?
+
+```{r}
+# Insert code here
+
+fitTree4 <- rpart(price ~ .,
+                 data = dt_train,
+                 method = "anova",
+                 control = rpart.control(cp = .001, maxdepth = 30))
+
+rpart.plot(fitTree4, box.palette="RdBu", extra = 101)
+
+# Pruning
+PrunedTree = prune(fitTree4, cp = .005)
+
+rpart.plot(PrunedTree, box.palette="RdBu", extra = 101)
+
+dt_test %>% 
+  mutate(yhat = predict(PrunedTree, newdata = .)) %>% 
+  summarise(MSE = mean( (yhat - price)^2))
+
+# End
+```
+
+
+7. (Optional) The code chunks above are a bit repetitive when it comes to calculating the mean squared error. Can you make these parts more compact (Hint: Write an MSE function that takes actual and predicted values as inputs)?
+
+```{r}
+# INSERT CODE HERE
+
+# Define MSE function
+MSE = function(yhat, y) {
+  mean( (yhat - y)^2)
+}
+
+# Example usage
+MSE(yhat = predict(PrunedTree, newdata = dt_test), 
+    y = dt_test$price)
+
+
+# END
+```
+
+

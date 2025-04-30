@@ -1,0 +1,223 @@
+---
+title: 'Data Science Week 9: Ensemble Learning'
+author: "Tom Zimmermann"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+
+```
+
+This week we continue our analysis of AirBNB apartment prices in London using the same data as over the last two weeks (`W7_AirBNB.csv`).
+
+0. Load the data.
+
+```{r}
+# Insert code here
+
+dt = read_csv('W7_AirBNB.csv')
+
+# End
+```
+
+1. Below, I split the data into a training set and a test set as we did last week. Run the cell and check whether you still understand what it does (no coding on your end required in this part).
+
+```{r}
+set.seed(123)
+
+dt = dt %>% 
+  mutate(TrainTest = sample(x = c('Train', 'Test'),
+                            size = nrow(.),
+                            prob = c(.7, .3), 
+                            replace = TRUE)
+  )
+
+dt_train = dt %>% 
+  filter(TrainTest == 'Train') %>% 
+  select(-TrainTest)
+
+dt_test = dt %>% 
+  filter(TrainTest == 'Test') %>% 
+  select(-TrainTest)
+  
+# Check whether this worked (you should see 1519 observations assigned to Test and 3560 to Train)
+table(dt$TrainTest)
+
+```
+
+
+2. Estimate a random forest on the training data `dt_train` to forecast `price` using all variables as input using the `randomForest` package. Let all parameters remain at their default values and estimate 400 trees.
+
+```{r}
+# Insert code here
+library(randomForest)
+
+fitRF <- randomForest(price ~ .,
+                      data = dt_train,
+                      ntree = 400,
+                      importance = TRUE)
+
+# End
+```
+
+
+3. After how many trees does the MSE appear to not change anymore? (Hint: `plot()`)
+
+```{r}
+# Insert code here
+plot(fitRF)
+
+# convergence after approx. 200 trees.
+
+# End
+```
+
+
+4. Which variables are most relevant? (Hint: `varImpPlot()`)
+
+```{r}
+# Insert code here
+
+varImpPlot(fitRF, type = 1, scale = TRUE)
+
+# Number of people the AirBnB accomodates, number of bathrooms and room type are the three most relevant variables.
+
+# End
+```
+
+
+5. What's the MSE of the model on the test data `dt_test`?
+
+```{r}
+# Insert code here
+
+dt_test %>%
+  mutate(yhat = predict(fitRF, newdata = .)) %>% 
+  summarise(MSE = mean((yhat - price)^2))
+
+# End
+```
+
+
+6. Estimate a boosted regression tree on the training data `dt_train` to forecast `price` using all variables as input using the `gbm` package. Let all parameters remain at their default values (except for setting `interaction.depth = 5`) and estimate 400 trees.
+
+
+```{r}
+# Insert code here
+library(gbm)
+
+fitBoosted <- gbm(price ~ .,
+                  data = dt_train %>% 
+                    mutate(room_type = as.factor(room_type)) %>% 
+                    mutate(cancellation_policy = as.factor(cancellation_policy)) ,
+                  distribution = 'gaussian',
+                  n.trees = 400,
+                  interaction.depth = 5)
+
+
+# End
+```
+
+
+7. Which variables are most relevant in your boosted tree model over the first 300 trees? (Hint: `summary()`)
+
+
+```{r}
+# Insert code here
+summary(fitBoosted, n.trees = 300)
+# Number of people the AirBnB accomodates, room type and number of bathrooms are the three most relevant variables.
+
+# End
+```
+
+
+8. What is the mean squared error of your boosted regression tree model on the test data `dt_test` using the first 300 trees?
+
+
+```{r}
+# Insert code here
+
+dt_test %>%
+  mutate(yhat_boosting = predict(fitBoosted, newdata = ., n.trees = 300)) %>% 
+  summarise(MSE = mean((yhat_boosting - price)^2))
+
+# End
+```
+
+
+9. How does your prediction depend on `n_review_scores_rating` using the first 300 trees?
+
+
+```{r}
+# Insert code here
+library(pdp)
+
+pdp::partial(fitBoosted, 
+             pred.var = "n_review_scores_rating", 
+             n.trees = 300, 
+             plot = TRUE)
+
+# End
+```
+
+
+
+
+
+
+
+10. (Optional) How can you adjust your Random Forest estimation function in part 2 to only do bagging (rather than the full random forest procedure)? What is the MSE on the test data for the bagging model?
+
+```{r}
+# To do bagging, set m = p. We have 62 variables minus the price variable. So set mtry = 61. Default for regression is mtry = floor(ncol(x)/3).
+
+fitBagging <- randomForest(price ~ .,
+                      data = dt_train,
+                      ntree = 400,
+                      mtry = 61)
+
+dt_test %>%
+  mutate(yhat_bagging = predict(fitBagging, newdata = .)) %>% 
+  summarise(MSE = mean((yhat_bagging - price)^2))
+
+# End
+```
+
+
+
+11. (Optional) How does the mean squared error of the boosted regression tree model in part 6 on the test data change when you use a `shrinkage` (learning rate $\lambda$)-parameter of .01 for the estimation and you predict again using the first 300 trees? What is the MSE if you use the first 400 trees? (Hint: The default value for the parameter is .1)
+
+```{r}
+fitBoosted2 <- gbm(price ~ .,
+                  data = dt_train %>% 
+                    mutate(room_type = as.factor(room_type)) %>% 
+                    mutate(cancellation_policy = as.factor(cancellation_policy)),
+                  distribution = 'gaussian',
+                  n.trees = 400,
+                  interaction.depth = 5,
+                  shrinkage = .01)
+
+
+# MSE increases if one still uses 300 trees
+dt_test %>%
+  mutate(yhat_boosting2 = predict(fitBoosted2, newdata = ., n.trees = 300)) %>% 
+  summarise(MSE = mean((yhat_boosting2 - price)^2))
+
+# MSE goes down if one uses more trees. Typically, a lower learning rate requires
+# a higher number of trees
+dt_test %>%
+  mutate(yhat_boosting2 = predict(fitBoosted2, newdata = ., n.trees = 400)) %>% 
+  summarise(MSE = mean((yhat_boosting2 - price)^2))
+
+
+# End
+```
+

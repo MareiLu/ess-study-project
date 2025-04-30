@@ -1,0 +1,257 @@
+---
+title: 'Data Science Week 10: Feed-forward Networks'
+author: "Tom Zimmermann"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+
+```
+
+
+# Install `Keras` and `TensorFlow`
+
+1. Download either of the two files from ILIAS and open the file in R
+
+- if you are a *Windows* user: WINDOWS\_installKeras.R 
+- if you are a *MacOS* user: MAC\_installKeras.R
+
+2. Run the file up to line 30
+
+3. When the installation is finished, run the remaining lines:
+
+```{r eval=FALSE}
+library(tensorflow)
+tf$constant("Hello Tensorflow!")
+```
+
+This should (among potentially other things) produce the following output: `tf.Tensor(b'Hello Tensorflow!', shape=(), dtype=string)`
+
+
+# Lab exercise
+
+This week we continue our analyis of AirBNB apartment prices in London using the same data as over the past weeks (`W7_AirBNB.csv`).
+
+0. Load the data.
+
+```{r}
+# Insert code below
+
+dt = read_csv("W7_AirBNB.csv")
+
+# End
+```
+
+
+1. To keep runtime manageable for the in-class exercise, we will work with a smaller version of the dataset that only uses 15 of the available features. Run the code below to restrict the dataset for the next parts of the lab.
+
+
+```{r}
+dt = dt[, 1:16]  # First column is the price (outcome), use next 15 columns as features
+
+```
+
+
+2. The `fit` function of `keras` does not accept tibbles as inputs and we need to transform the data to estimate our network models below. Run the code in the next cell and understand what it does.
+
+
+```{r}
+# ...
+train_outcome  = dt$price[1:4000] %>% as.matrix()
+train_features = dt[1:4000, 2:16] %>% as.matrix()
+
+# ...
+test_outcome  = dt$price[4001:5079] %>% as.matrix()
+test_features = dt[4001:5079, 2:16] %>% as.matrix()
+
+```
+
+
+3. Normalize features as discussed in the lectures slides. Remember to not use the test data for normalization!
+
+```{r}
+# Insert code here
+
+mean <- apply(train_features, 2, mean)
+sd   <- apply(train_features, 2, sd)
+
+train_features <- scale(train_features, center=mean, scale=sd)
+
+# Use the training mean and sd also for test dataset
+test_features <- scale(test_features, center=mean, scale=sd)
+
+# End
+```
+
+
+4. Set up a simple network with two hidden layers that has 16 units in the first hidden layer and 8 units in the second hidden layer. Use ReLU activation in both layers. Then type `model` in the console and study the output. Why does the model have 401 parameters?
+
+
+```{r}
+# Insert code here
+library(keras)
+
+model <- keras_model_sequential() %>%
+  layer_dense(units = 16, activation = "relu", 
+              input_shape = 15) %>%
+  layer_dense(units = 8, activation = "relu") %>%
+  layer_dense(units = 1)
+
+
+# End
+```
+
+
+5. Add the model compilation step: Use the Adam optimizer with a learning rate of .005 and set the loss function to mean squared error.
+
+
+```{r}
+# Insert code here
+
+model %>% compile(
+  optimizer = optimizer_adam(learning_rate = .005),
+  loss = "mse"
+)
+
+# End
+```
+
+
+
+6. Fit the model using the `fit` function. What is the final training and validation mean squared error of your model? What is the mean squared error on the test data? 
+
+```{r}
+history <- model %>% 
+  fit(
+    x = train_features,
+    y = train_outcome,
+    epochs = 100,
+    verbose = 1,
+    # Set validation split
+    validation_split = 0.25
+  )
+
+
+history
+plot(history)
+
+model %>% 
+  evaluate(test_features, test_outcome)
+
+```
+
+
+7. Add a third hidden layer (with 8 units) to your network and re-estimate the model. What is the mean squared error on the test data?
+
+```{r}
+
+model2 <- keras_model_sequential() %>%
+  layer_dense(units = 16, activation = "relu", 
+              input_shape = 15) %>%
+  layer_dense(units = 8, activation = "relu") %>%
+  layer_dense(units = 8, activation = "relu") %>% 
+  layer_dense(units = 1)
+
+model2 %>% compile(
+  optimizer = optimizer_adam(learning_rate = .005),
+  loss = "mse"
+)
+
+history2 <- model2 %>% 
+  fit(
+    x = train_features,
+    y = train_outcome,
+    epochs = 100,
+    verbose = 1,
+    # Set validation split
+    validation_split = 0.25
+  )
+
+model2 %>% 
+  evaluate(test_features, test_outcome)
+
+```
+
+
+8. Add dropout with a 25% dropout rate to each hidden layer and re-estimate the model. What is the mean squared error on the test data?
+
+```{r}
+model3 <- keras_model_sequential() %>%
+  layer_dense(units = 16, activation = "relu", 
+              input_shape = 15) %>%
+  layer_dropout(0.25) %>% 
+  layer_dense(units = 8, activation = "relu") %>%
+  layer_dropout(0.25) %>% 
+  layer_dense(units = 8, activation = "relu") %>% 
+  layer_dropout(0.25) %>% 
+  layer_dense(units = 1)
+
+model3 %>% compile(
+  optimizer = optimizer_adam(learning_rate = .005),
+  loss = "mse"
+)
+
+history3 <- model3 %>% 
+  fit(
+    x = train_features,
+    y = train_outcome,
+    epochs = 100,
+    verbose = 1,
+    # Set validation split
+    validation_split = 0.25
+  )
+
+model3 %>% 
+  evaluate(test_features, test_outcome)
+
+```
+
+
+9. Estimate the model from part 8 again but with a reduced batch size of 16. What is the mean squared error on the test data?
+
+
+```{r}
+model4 <- keras_model_sequential() %>%
+  layer_dense(units = 16, activation = "relu", 
+              input_shape = 15) %>%
+  layer_dropout(.25) %>% 
+  layer_dense(units = 8, activation = "relu") %>%
+  layer_dropout(.25) %>% 
+  layer_dense(units = 8, activation = "relu") %>% 
+  layer_dropout(.25) %>% 
+  layer_dense(units = 1)
+
+model4 %>% compile(
+  optimizer = optimizer_adam(learning_rate = .005),
+  loss = "mse"
+)
+
+history4 <- model4 %>% 
+  fit(
+    x = train_features,
+    y = train_outcome,
+    epochs = 200,
+    batch_size = 16,
+    verbose = 1,
+    # Set validation split
+    validation_split = 0.25
+  )
+
+model4 %>% 
+  evaluate(test_features, test_outcome)
+
+```
+
+
+
+
+
+
