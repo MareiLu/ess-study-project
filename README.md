@@ -88,6 +88,7 @@ library(sjPlot)       # Model plots
 
 
 **Code für B**
+
 Here's a tailored **R Markdown template** for your research question:
 
 > _“Are younger people more politically competent because of greater media consumption, or despite lower political trust?”_
