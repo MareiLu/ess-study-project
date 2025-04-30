@@ -19,23 +19,16 @@
   – Interaction: agea × cntry, with country-level mean trstplt as contextual variable.
 
 **Zeitplan für B**
-Great! Your research question is clear and testable:
-
+- research question is clear and testable:
 > “Are younger people more politically competent because of greater media consumption, or despite lower political trust?”
 
-You're focusing on the variable **`polcmpl`** (*"Politics is too complicated to understand"*) as a measure of **perceived political competence**, and you'll control for:
+- You're focusing on the variable **`polcmpl`** (*"Politics is too complicated to understand"*) as a measure of **perceived political competence**, and you'll control for:
 
 - **`polintr`** – interest in politics  
 - **`trstplt`** – trust in politicians  
 - **age groups** – to analyze the digital divide  
 
-Here’s a **focused roadmap** to help you present your R Markdown file by **17.05**:
-
----
-
-## 🗺️ ROADMAP TO 17.05 — R MARKDOWN
-
-### ✅ **This Week (by 03.05): Data & Variables**
+**This Week (by 03.05): Data & Variables**
 
 - [ ] **Select variables**:
   - `polcmpl` (DV – perceived political complexity)
@@ -53,9 +46,7 @@ Here’s a **focused roadmap** to help you present your R Markdown file by **17.
 - [ ] **Start R Markdown file**:
   - Title, authors, question, section headings (intro, data, descriptives, models)
 
----
-
-### ✅ **Next Week (by 10.05): Descriptive Stats & Models**
+ **Next Week (by 10.05): Descriptive Stats & Models**
 
 - [ ] **Descriptive statistics**:
   - Mean `polcmpl` by age group
@@ -72,9 +63,7 @@ Here’s a **focused roadmap** to help you present your R Markdown file by **17.
   - Use `ggplot2` or `ggeffects` to show predicted values by age group
   - Simple coefficient plot (`sjPlot::plot_model()`)
 
----
-
-### ✅ **Final Week (11–17.05): Interpretation & Polish**
+ **Final Week (11–17.05): Interpretation & Polish**
 
 - [ ] **Write up model results**
   - Explain what affects perceived competence
@@ -86,9 +75,7 @@ Here’s a **focused roadmap** to help you present your R Markdown file by **17.
   - Clean figures and tables (add titles/labels)
   - Add final section: **"Are we on the right track?"** → reflection and next steps
 
----
-
-## ✅ Recommended Packages
+Recommended Packages
 
 ```r
 library(tidyverse)
@@ -97,98 +84,160 @@ library(ggeffects)    # For plotting marginal effects
 library(kableExtra)   # Tables
 library(sjPlot)       # Model plots
 ```
-
----
 
 
 
 **Code für B**
-Great! Your research question is clear and testable:
+Here's a tailored **R Markdown template** for your research question:
 
-> “Are younger people more politically competent because of greater media consumption, or despite lower political trust?”
+> _“Are younger people more politically competent because of greater media consumption, or despite lower political trust?”_
 
-You're focusing on the variable **`polcmpl`** (*"Politics is too complicated to understand"*) as a measure of **perceived political competence**, and you'll control for:
+This template focuses on the variable `polcmpl` (perceived complexity of politics), controlling for `polintr` (political interest) and `trstplt` (trust in politicians), across **age groups**.
 
-- **`polintr`** – interest in politics  
-- **`trstplt`** – trust in politicians  
-- **age groups** – to analyze the digital divide  
+### 📄 R Markdown Template (Copy into a `.Rmd` file)
 
-Here’s a **focused roadmap** to help you present your R Markdown file by **17.05**:
-
+```markdown
+---
+title: "Digital Divide and Perceived Political Competence"
+author: "Your Team Name"
+date: "`r Sys.Date()`"
+output: html_document
 ---
 
-## 🗺️ ROADMAP TO 17.05 — R MARKDOWN
-
-### ✅ **This Week (by 03.05): Data & Variables**
-
-- [ ] **Select variables**:
-  - `polcmpl` (DV – perceived political complexity)
-  - `agea` (age) – turn into **age group** (`<30`, `30–59`, `60+`)
-  - `polintr` (political interest)
-  - `trstplt` (trust in politicians)
-  - `cntry` (country)
-
-- [ ] **Clean and prepare data**:
-  - Recode `polcmpl` if needed (e.g., reverse code so higher = more competence)
-  - Create **age group** variable
-  - Handle missing values
-  - Optionally center/scale continuous variables
-
-- [ ] **Start R Markdown file**:
-  - Title, authors, question, section headings (intro, data, descriptives, models)
-
----
-
-### ✅ **Next Week (by 10.05): Descriptive Stats & Models**
-
-- [ ] **Descriptive statistics**:
-  - Mean `polcmpl` by age group
-  - Plot `polcmpl` vs. age or age group
-  - Correlation matrix: `polcmpl`, `polintr`, `trstplt`, age
-
-- [ ] **Run models**:
-  - **Model 1**: `polcmpl ~ age_group`
-  - **Model 2**: `polcmpl ~ age_group + polintr + trstplt`
-  - **Model 3 (optional)**: Add interaction `age_group * trstplt`  
-    → See if trust matters more/less by age
-
-- [ ] **Visualize key effects**:
-  - Use `ggplot2` or `ggeffects` to show predicted values by age group
-  - Simple coefficient plot (`sjPlot::plot_model()`)
-
----
-
-### ✅ **Final Week (11–17.05): Interpretation & Polish**
-
-- [ ] **Write up model results**
-  - Explain what affects perceived competence
-  - Highlight role of age, interest, and trust
-  - Tie back to your digital divide framing
-
-- [ ] **Polish R Markdown file**:
-  - Add inline summaries, e.g., `r nrow(data)` observations
-  - Clean figures and tables (add titles/labels)
-  - Add final section: **"Are we on the right track?"** → reflection and next steps
-
----
-
-## ✅ Recommended Packages
-
-```r
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 library(tidyverse)
-library(lme4)         # If using multilevel modeling
-library(ggeffects)    # For plotting marginal effects
-library(kableExtra)   # Tables
-library(sjPlot)       # Model plots
+library(ggeffects)
+library(sjPlot)
+library(kableExtra)
 ```
 
+## 🔍 Research Question
+
+Are younger people more politically competent because of greater media consumption, or despite lower political trust?
+
+We explore this using the variable `polcmpl` (*"Politics is too complicated to understand"*) as a proxy for perceived political competence.
+
+## 📊 Data Preparation
+
+```{r load-and-clean}
+# Load your dataset (replace this with real loading code)
+# Example: ess <- read_sav("your_ess_file.sav")
+
+# Simulate structure for testing
+set.seed(42)
+ess <- tibble(
+  agea = sample(18:85, 1000, replace = TRUE),
+  polcmpl = sample(0:4, 1000, replace = TRUE),   # 0 = not complicated, 4 = very complicated
+  polintr = sample(0:3, 1000, replace = TRUE),   # 0 = not at all, 3 = very
+  trstplt = sample(0:10, 1000, replace = TRUE),  # 0–10 trust scale
+  cntry = sample(c("DE", "FR", "SE", "ES", "PL"), 1000, replace = TRUE)
+)
+
+# Recode age group
+ess <- ess %>%
+  mutate(age_group = case_when(
+    agea < 30 ~ "<30",
+    agea >= 30 & agea <= 59 ~ "30–59",
+    agea >= 60 ~ "60+"
+  )) %>%
+  mutate(
+    age_group = factor(age_group, levels = c("<30", "30–59", "60+")),
+    polcmpl_rev = 4 - polcmpl  # higher = more competence
+  )
+```
+
+## 📈 Descriptive Statistics
+
+```{r descriptives}
+ess %>%
+  group_by(age_group) %>%
+  summarise(
+    mean_competence = round(mean(polcmpl_rev, na.rm = TRUE), 2),
+    mean_interest = round(mean(polintr, na.rm = TRUE), 2),
+    mean_trust = round(mean(trstplt, na.rm = TRUE), 2),
+    n = n()
+  ) %>%
+  kbl() %>%
+  kable_styling()
+```
+
+```{r plot-competence}
+ggplot(ess, aes(x = age_group, y = polcmpl_rev)) +
+  geom_boxplot(fill = "#69b3a2") +
+  labs(title = "Perceived Political Competence by Age Group",
+       y = "Perceived Competence (Higher = More)", x = "Age Group")
+```
+
+## 🧮 Regression Models
+
+### Model 1: Age Group Only
+
+```{r model1}
+mod1 <- lm(polcmpl_rev ~ age_group, data = ess)
+summary(mod1)
+```
+
+### Model 2: Add Political Interest and Trust
+
+```{r model2}
+mod2 <- lm(polcmpl_rev ~ age_group + polintr + trstplt, data = ess)
+summary(mod2)
+```
+
+### Model 3 (Optional): Interaction with Trust
+
+```{r model3}
+mod3 <- lm(polcmpl_rev ~ age_group * trstplt + polintr, data = ess)
+summary(mod3)
+```
+
+## 📉 Visualizing Model Effects
+
+```{r effects-plot}
+plot_model(mod2, type = "eff", terms = c("age_group", "trstplt")) +
+  ggtitle("Effect of Age Group and Trust on Perceived Political Competence")
+```
+
+```{r marginal-effects}
+ggeffect(mod2, terms = "age_group") %>%
+  plot() +
+  labs(title = "Predicted Competence by Age Group", y = "Predicted Value")
+```
+
+## 📝 Interpretation
+
+- Do younger people feel more or less politically competent?
+- Does trust in politicians explain this?
+- Does interest in politics moderate this relationship?
+
+## 📦 Appendix
+
+- Variable definitions:
+  - `polcmpl`: Politics too complicated to understand
+  - `polintr`: Interest in politics
+  - `trstplt`: Trust in politicians
+  - `agea`: Age (recoded into `age_group`)
+
+- Notes on data:
+  - Only countries X, Y, Z used
+  - List any data exclusions
+
+```
+
+## Next Steps
+
+- Replace the **simulated data** with your actual ESS dataset.
+- Adjust variable names if needed (e.g., `polintr` may be `polintr` or similar in your version).
+- Start filling in text sections (interpretation, variable definitions, etc.)
+
+Would you like help writing interpretation text or adding additional plots (e.g. for political interest by age)?
 
 
 
 **Zeitplan für C**
 -you’re looking at **cross-level interaction**: does the **individual-level relationship between age and political efficacy** vary **depending on country-level trust in politicians**? That’s a solid multilevel or contextual analysis structure.
 
-🗺️ R Markdown Roadmap (Now – 17.05)
 This Week (until ~03.05): Planning & Data Setup
 Goal: Prepare your data and structure your R Markdown file
 
@@ -392,12 +441,9 @@ _Interpret results briefly in 2–3 bullet points._
 
 ```
 
----
-
 This gives you a clean base that:
 - Loads your data
 - Prepares variables
 - Runs both simple and multilevel models
 - Visualizes the interaction
 
-Would you like me to adjust this template for **specific variable names** from your ESS file (e.g., exact variable codes)?
