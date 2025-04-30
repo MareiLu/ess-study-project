@@ -1,17 +1,5 @@
-- How do levels of trust in the EU and UN vary across Western vs. Eastern European countries, and what role does immigration play in this?
-- How do perceptions of political competence (internal efficacy) differ between younger and older people across democracies? (media)
 
 🌍 2. How do levels of trust in the EU and UN vary across Western vs. Eastern European countries, and what role does immigration play in this?
-
-  A. The regional gap hypothesis
-  “Are citizens of Western Europe systematically more trusting of the EU and UN than those in Eastern Europe, even after controlling for immigration attitudes?”
-  
-  – Controls: imsmetn, imdfetn, impcntr; group cntry into East/West.
-  
-  B. Immigration attitudes as a moderator
-  “Does the effect of region (West vs. East) on trust in the EU/UN depend on attitudes toward immigration?”
-  
-  – Test interaction terms: region × imsmetn, etc.
   
   C. Generational and regional perspective
   “Is trust in international institutions higher among younger respondents in Eastern Europe, suggesting a generational shift?”
