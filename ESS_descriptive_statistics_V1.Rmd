@@ -1,0 +1,67 @@
+---
+title: "ESS Version 1: Descriptive Statistics"
+author: "Marei Göbelbecker"
+date: "2025-04-23"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Download Packages
+    
+```{r install-packages, eval=FALSE, include=FALSE}
+install.packages(c(
+  "tidyverse",  # Datenaufbereitung & Visualisierung
+  "skimr",      # Übersichtliche Daten-Zusammenfassung
+  "psych",      # Deskriptive Statistik
+  "rmarkdown",  # Für R Markdown selbst
+  "knitr",      # Code-Ausgabe in R Markdown
+  "labelled"   # Working with labels
+  ))
+```
+
+### Load Packages
+
+```{r load-packages, include=FALSE}
+library(tidyverse)   # Bündelt ggplot2, dplyr, readr, etc. – für Datenimport, -aufbereitung, Visualisierung
+library(skimr)       # Für übersichtliche Zusammenfassungen von Datensätzen
+library(psych)       # Für deskriptive Statistiken (z.B. Mittelwert, SD, Median)
+library(rmarkdown)   # Für das Erstellen von HTML/PDF-Dokumenten
+library(knitr)       # Macht Code-Ausgabe in R Markdown hübsch und steuerbar
+library(labelled)   
+```
+
+### Loading data
+
+```{r}
+setwd("C:/Users/marei/Documents/Uni Köln/Semester 6/Project Study")
+
+dt <- haven::read_spss("ESS_data_raw.sav") 
+
+# Filter bsp falls später noch nötig:
+# ess_data <- ess %>% filter(essround == 10)
+```
+
+## First Overview
+
+```{r}
+head(dt)
+
+```
+
+```{r}
+# Looking for all variables in the dataset with 'politic' in it
+look_for(dt, "politic")
+```
+
+```{r}
+# Variablenlabels
+var_label(dt$trstplt)
+
+# Value Labels (z. B. Antwortmöglichkeiten)
+val_labels(dt$trstplt)
+```
