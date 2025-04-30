@@ -1,29 +1,51 @@
-General Comparative Questions
-- good for getting started or working with broad trends:
-1. How does trust in national institutions relate to satisfaction with democracy across European countries?
-2. What is the relationship between public satisfaction with the economy and attitudes toward immigration?
-3. Do countries with higher levels of political trust show greater acceptance of immigrants?
 
 Temporal/Longitudinal Questions
 - good if you want to compare trends over time (multiple ESS rounds):
 4. Has trust in political institutions declined over time, and does this correlate with rising anti-immigrant sentiment?
-5. How have perceptions of immigration changed over time in relation to satisfaction with life and democracy?
-6. Is there a consistent relationship between satisfaction with health/education services and attitudes toward immigrants over time?
 
 Cross-Country Comparison Questions
 - comparison between countries or groups of countries:
 7. How do levels of trust in the EU and UN vary across Western vs. Eastern European countries, and what role does immigration play in this?
 8. Do countries with high satisfaction with democracy tend to be more welcoming toward immigrants from poorer countries?
 
-Sociodemographic or Political Identity-Focused Questions
-- to analyze individual-level predictors:
-9. Are individuals who are more trusting of political institutions more likely to have positive views on immigration?
-10. Does party identification moderate the relationship between economic satisfaction and anti-immigration attitudes?
-
 Attitudes and Values-Focused Questions
 - for more nuanced psychological/political behavior studies:
 11. Is there a correlation between general trust in people (social trust) and openness to immigrants?
-12. How does satisfaction with democratic governance relate to authoritarian or nativist attitudes?
 
-Example of a more specific and testable version:
-> “To what extent does trust in political institutions (parliament, politicians, political parties) mediate the relationship between satisfaction with democracy and support for immigration from non-European countries?”
+
+Comparative Political Attitudes
+“How do perceptions of political competence (internal efficacy) differ between younger and older people across democracies?”
+→ Focus on age groups, political self-efficacy, cross-country variation
+
+“Is trust in political parties linked to perceived fairness of the political system – and how does this differ between Eastern and Western Europe?”
+→ Compare regions; link institutional trust with system legitimacy
+
+“Does feeling represented politically increase voter turnout among socioeconomically disadvantaged groups?”
+→ Focus on working class, education, income, and “feeling close to a party”
+
+🧠 Psychological and Subjective Factors in Political Attitudes
+“What role does perceived safety play in support for authoritarian attitudes?”
+→ Combine crime perception and authoritarian value items
+
+“How do feelings of political alienation influence support for radical parties?”
+→ Focus on political disillusionment and support for extremist parties
+
+“Is political polarization associated with perceived social tensions in everyday life?”
+→ Explore links between group/class tension and ideological views
+
+🗳️ Democracy, Participation, and Forms of Politics
+“What factors shape support for direct democracy versus parliamentary democracy in Europe?”
+→ Variables like political interest, education, trust in institutions
+
+“What distinguishes non-voters from protest voters in their political attitudes?”
+→ Focus on disengagement, anti-system sentiment, party identification
+
+“How is political knowledge linked to preferences for strong authoritarian leadership?”
+→ Link media consumption/information and “strong leader” preferences
+
+🏛️ Institutional Trust & Legitimacy
+“What predicts trust in the judicial system in countries with high vs. low perceived corruption?”
+→ Combine country-level corruption data with individual trust ratings
+
+“To what extent do socioeconomic factors influence trust in the police – compared to other institutions?”
+→ Examine education, income, migration background vs. trust in police, parliament, parties
