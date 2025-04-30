@@ -1,0 +1,80 @@
+---
+title: "ESS Version 1: Descriptive Statistics"
+author: "Marei Göbelbecker"
+date: "2025-04-23"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Download Packages
+    
+```{r install-packages, eval=FALSE, include=FALSE}
+install.packages(c(
+  "tidyverse",  # Datenaufbereitung & Visualisierung
+  "skimr",      # Übersichtliche Daten-Zusammenfassung
+  "psych",      # Deskriptive Statistik
+  "rmarkdown",  # Für R Markdown selbst
+  "knitr",      # Code-Ausgabe in R Markdown
+  "labelled"   # Working with labels
+  ))
+```
+
+### Load Packages
+
+```{r load-packages, include=FALSE}
+library(haven)       # Daten lesen
+library(tidyverse)   # Bündelt ggplot2, dplyr, readr, etc. – für Datenimport, -aufbereitung, Visualisierung
+library(skimr)       # Für übersichtliche Zusammenfassungen von Datensätzen
+library(psych)       # Für deskriptive Statistiken (z.B. Mittelwert, SD, Median)
+library(rmarkdown)   # Für das Erstellen von HTML/PDF-Dokumenten
+library(knitr)       # Macht Code-Ausgabe in R Markdown hübsch und steuerbar
+library(labelled)   
+```
+
+### Loading data
+
+```{r}
+setwd("C:/Users/marei/Documents/Uni Köln/Semester 6/Project Study")
+
+dt_raw <- read_sav("ESS_data_raw.sav") 
+
+# Filter bsp falls später noch nötig:
+# ess_data <- ess %>% filter(essround == 10)
+```
+
+# Erste Übersicht
+
+```{r}
+# Überblick: Struktur & Label-Informationen
+head(dt_raw)
+glimpse(dt_raw)
+var_label(dt_raw)
+
+# Erste Übersicht über die Daten
+skim(dt_raw)
+
+# Basisstatistiken für numerische Variablen
+dt_raw %>% select(where(is.numeric)) %>% describe()
+
+# Häufigkeiten für kategoriale Variablen
+dt_raw %>% 
+  select(where(is.labelled) | where(is.character)) %>% 
+  map(~table(as_factor(.x), useNA = "always")) %>% 
+  head(5)  # Zeigt erste 5 Variablen
+
+# Länder- oder Rundenvariablen finden (z. B. country, cntry, module, etc.)
+dt_raw %>% count(cntry)
+dt_raw %>% count(round)  # oder 'essround', 'edition', etc.
+
+
+```
+
+## Research Question: 
+
+table(dt_raw$authgov)
+
