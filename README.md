@@ -1,6 +1,5 @@
 # Research Questions
 1. How do levels of trust in the EU and UN vary across Western vs. Eastern European countries, and what role does immigration play in this?
-2. “Is trust in international institutions higher among younger respondents in Eastern Europe, suggesting a generational shift?”
 3. How do perceptions of political competence (internal efficacy) differ between younger and older people across democracies?
 4. Are younger people more politically competent because of greater media consumption, or despite lower political trust?
 
