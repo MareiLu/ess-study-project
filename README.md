@@ -214,6 +214,63 @@ mod3 <- lm(polcmpl_rev ~ age_group * trstplt + polintr, data = ess)
 summary(mod3)
 ```
 
+-research question focuses on **whether younger people are more politically competent because of their media consumption** --> it's essential to bring the media variables (`nwspol`, `netustm`, `netusoft`) directly into modeling
+- **extending current models** to include media use
+
+---
+
+### ✅ **Model 4: Add Media Use as Predictors**
+
+```r
+mod4 <- lm(polcmpl_rev ~ age_group + polintr_rev + trstplt + nwspol + netustm + netusoft, data = dt_raw)
+summary(mod4)
+```
+
+**Goal:** Test whether media consumption explains additional variance in perceived competence, beyond age and political trust/interest.
+
+---
+
+### ✅ **Model 5: Age × Media Interaction(s)**
+
+```r
+mod5 <- lm(polcmpl_rev ~ age_group * nwspol + polintr_rev + trstplt, data = dt_raw)
+summary(mod5)
+```
+
+**Goal:** See if the effect of news consumption differs by age group. You could repeat this for `netustm` and `netusoft` individually or all at once:
+
+```r
+mod5b <- lm(polcmpl_rev ~ age_group * (nwspol + netustm + netusoft) + polintr_rev + trstplt, data = dt_raw)
+summary(mod5b)
+```
+
+---
+
+### ✅ **Model 6: Media × Trust Interaction**
+
+```r
+mod6 <- lm(polcmpl_rev ~ age_group + polintr_rev + trstplt * (nwspol + netustm + netusoft), data = dt_raw)
+summary(mod6)
+```
+
+**Goal:** Explore whether the impact of trust on perceived competence depends on media usage patterns.
+
+---
+
+### ✅ **Model 7: Fully Saturated Model (All Interactions)**
+
+Only do this if you have enough data and want to explore complex interactions:
+
+```r
+mod7 <- lm(polcmpl_rev ~ age_group * (nwspol + netustm + netusoft) +
+                            trstplt * (nwspol + netustm + netusoft) +
+                            polintr_rev, data = dt_raw)
+summary(mod7)
+```
+
+---
+
+
 ### 📉 Visualizing Model Effects
 
 ```{r effects-plot}
