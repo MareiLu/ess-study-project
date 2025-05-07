@@ -1,0 +1,182 @@
+---
+title: "Shiny Workshop"
+author: "Marei Göbelbecker"
+date: "2025-05-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Shiny Workshop
+
+Look at the ones from last year, he mentioned:
+https://sebastian-weibels.shinyapps.io/Populism-Elections/
+https://sebastian-weibels.shinyapps.io/Sustainability-Elections/
+
+-	Menu on top
+-	Plots with reactive programming dependent on the filters applied
+-	Hover for information in the plots
+
+```{r, eval=FALSE, include=FAlSE}
+install.packages("shiny")
+library(shiny)
+# library(tidyverse)
+```
+
+# Creating the App
+
+```{r}
+# Creating the App
+ui <- fluidPage(
+  "Hello world!"
+)
+  # here as fluid Page (scrollable, use this for smartphone use also, grid of 12)
+  # otherwise also dashboard possible (rather wide format)
+
+# Defining the function
+server <- function(input, output, session) {
+}
+
+##  Opening the App Page
+shinyApp(ui, server)
+```
+
+# Creating the user Interface
+
+```{r}
+ui <- fluidPage(
+  titlePanel("Title Panel"),
+  
+  sidebarLayout(
+    sidebarPanel("Title: SIdebar Panel"), 
+  
+  mainPanel("Title: Main Panel",
+            fluidRow(
+              column(width = 4, ...)
+            ))
+  
+  )
+)
+
+# Defining the function
+server <- function(input, output) {
+}
+
+##  Opening the App Page
+shinyApp(ui = ui, server = server)
+```
+
+# Adding UI controls
+
+- selecting data set as input for output 
+- different inputs go into the ui selectInput 
+- goes into server funtion 
+- tableOutput then gives the output on the server funtion
+
+**see markdown for special commands on inputs widgets**
+
+### Exercises on inout functions
+
+```{r}
+# install.packages("shinyWidgets")
+# library(shinyWidgets)
+
+?textInput #use this for information on the functions
+
+ui <- fluidPage(
+  # 1: writing text within 
+  textInput("Your Name", "", 
+            placeholder = "What is your name?"),
+
+  # 2: slider input 0-100, interval 5 with animation
+  sliderInput("number", "Select a number", 
+              min=0, max=100, 
+              value=0, 
+              step=5, 
+              animate=TRUE),
+  
+  # 3: subheadlines in a list
+  selectInput("breed", "Your favorite animal breed:", 
+              choices = 
+                list(dogs= list("Bulldog", "Labrador"),
+                     cats= list("Persian cat", "Senegal cat"))
+             ),
+)
+
+# remember the commas between the different Inputs!!!!
+
+server <- function(input, output) {
+}
+
+
+shinyApp(ui, server)
+
+```
+
+# Output functions
+
+create a placeholder functions which are then given out by the server function
+
+### Text Output
+```{r}
+ui <- fluidPage(
+  textOutput("text"),
+  verbatimTextOutput("code")
+)
+
+server <- function(input, output, session) {
+  output$text <- renderText({"Hello Fliend!"})
+}
+
+shinyApp(ui, server)
+```
+
+**look at his markdown for Table & Plot Output etc.**
+
+# Exercise on Output
+```{r}
+?textOutput
+
+# 1: Answer b
+
+```
+
+# Regression
+R markdown for code
+
+```{r}
+install.packages("stargazer")
+library(stargazer)
+```
+
+# Responsive Coding
+
+When typing in an input, it is shown in the output. 
+R markdown for Code
+
+Render functions are by default reactive ->
+in his code the difference is not in the output but in the function; useful if the engn string is used for more than one output, so we can use the same input on more than one part
+
+the order of function definition & function calling doesn't matter
+
+observer is not necessary but observer makes it cleaner: seperate into reactive and observer to make the dashboard and prozessorleistung easier :)
+
+## building an app around the plot
+4 = width (3*4=12 grid)
+Input1=size
+Input2=mean
+Input3=sd
+
+! need to use reactive ! normal function would not work
+
+# Notes:
+- think of a structure of the dashboard first
+- coding top-down
+- think about what is shown and which outputs should be interactive
+- in which ones does it make sense to show it interactive? which filters are useful, which are not?
+
+- only use the cleaned and refined dataset into the server function (one server for the full ui)
+- possible structure: First by page, then  by reactive & observer, make comments!
+
