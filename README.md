@@ -3,6 +3,11 @@
 3. How do perceptions of political competence (internal efficacy) differ between younger and older people across democracies?
 4. Are younger people more politically competent because of greater media consumption, or despite lower political trust?
 
+# Dashboard 
+"About this Project", "General Insights/Descriptives", "General Findings", eventually "Implications/Predictions"
+-> 10min per person presentation, so don't do it more complicated than can be presented in 20min
+-> for the paper doesn't matter between 8-12 pages 
+
 # Important variables
 
 ### Political competence:
