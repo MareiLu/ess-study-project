@@ -123,7 +123,7 @@ Here's a tailored **R Markdown template** for your research question:
 
 This template focuses on the variable `polcmpl` (perceived complexity of politics), controlling for `polintr` (political interest) and `trstplt` (trust in politicians), across **age groups**.
 
-**📄 R Markdown Template (Copy into a `.Rmd` file)**
+**R Markdown Template (Copy into a `.Rmd` file)**
 
 ```markdown
 ---
@@ -141,11 +141,11 @@ library(sjPlot)
 library(kableExtra)
 ```
 
-## 🔍 Are younger people more politically competent because of greater media consumption, or despite lower political trust?
+## Are younger people more politically competent because of greater media consumption, or despite lower political trust?
 
 We explore this using the variable `polcmpl` (*"Politics is too complicated to understand"*) as a proxy for perceived political competence.
 
-### Data Preparation
+# Data Preparation
 
 ```{r load-and-clean}
 # Load your dataset (replace this with real loading code)
@@ -174,7 +174,7 @@ ess <- ess %>%
   )
 ```
 
-### Descriptive Statistics
+# Descriptive Statistics
 
 ```{r descriptives}
 ess %>%
@@ -196,7 +196,7 @@ ggplot(ess, aes(x = age_group, y = polcmpl_rev)) +
        y = "Perceived Competence (Higher = More)", x = "Age Group")
 ```
 
-### Regression Models
+# Regression Models
 
 **Model 1: Age Group Only**
 
@@ -224,7 +224,7 @@ summary(mod3)
 
 ---
 
-### **Model 4: Add Media Use as Predictors**
+# **Model 4: Add Media Use as Predictors**
 
 ```r
 mod4 <- lm(polcmpl_rev ~ age_group + polintr_rev + trstplt + nwspol + netustm + netusoft, data = dt_raw)
@@ -235,7 +235,7 @@ summary(mod4)
 
 ---
 
-### **Model 5: Age × Media Interaction(s)**
+# **Model 5: Age × Media Interaction(s)**
 
 ```r
 mod5 <- lm(polcmpl_rev ~ age_group * nwspol + polintr_rev + trstplt, data = dt_raw)
@@ -251,7 +251,7 @@ summary(mod5b)
 
 ---
 
-### **Model 6: Media × Trust Interaction**
+# **Model 6: Media × Trust Interaction**
 
 ```r
 mod6 <- lm(polcmpl_rev ~ age_group + polintr_rev + trstplt * (nwspol + netustm + netusoft), data = dt_raw)
@@ -262,7 +262,7 @@ summary(mod6)
 
 ---
 
-### ✅ **Model 7: Fully Saturated Model (All Interactions)**
+# **Model 7: Fully Saturated Model (All Interactions)**
 
 Only do this if you have enough data and want to explore complex interactions:
 
@@ -276,7 +276,7 @@ summary(mod7)
 ---
 
 
-### Visualizing Model Effects
+# Visualizing Model Effects
 
 ```{r effects-plot}
 plot_model(mod2, type = "eff", terms = c("age_group", "trstplt")) +
@@ -289,13 +289,13 @@ ggeffect(mod2, terms = "age_group") %>%
   labs(title = "Predicted Competence by Age Group", y = "Predicted Value")
 ```
 
-### Interpretation
+# Interpretation
 
 - Do younger people feel more or less politically competent?
 - Does trust in politicians explain this?
 - Does interest in politics moderate this relationship?
 
-### Appendix
+# Appendix
 
 - Variable definitions:
   - `polcmpl`: Politics too complicated to understand
