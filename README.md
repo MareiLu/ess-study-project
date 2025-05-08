@@ -3,6 +3,30 @@ A. How do levels of trust in the EU and UN vary across Western vs. Eastern Europ
 B. Are younger people more politically competent because of greater media consumption, or despite lower political trust?
 C. How do perceptions of political competence (internal efficacy) differ between younger and older people across democracies?
 
+# Alternative Forschungsfragen – Bereich B: Mediennutzung
+Hat politische Onlineaktivität Einfluss auf politisches Vertrauen?
+→ Nutze z. B. pstplonl (online political activity) als Prädiktor für trstplt, trstprt.
+
+Geht häufige Internetnutzung mit höherem politischen Vertrauen oder eher mit Skepsis einher?
+→ Regression: netusoft oder netustm → trstplt.
+
+Gibt es einen Zusammenhang zwischen der Dauer politischer Nachrichtennutzung (nwspol) und politischer Wirksamkeit (actrolga)?
+
+# Alternative Forschungsfragen – Bereich C: Politisches Vertrauen
+Vertrauen junge Menschen weniger in internationale Institutionen wie die UN oder die EU?
+→ agea → trstun, trstep.
+
+Hängt Vertrauen in Polizei oder Justiz mit dem Vertrauen in politische Institutionen zusammen?
+→ Korrelationsmatrix zwischen trstplc, trstlgl, trstplt, trstprt.
+
+Gibt es in Ländern mit hohem Vertrauen in die Polizei ein stärkeres politisches Engagement (z. B. vote oder actrolga)?
+
+Welche Faktoren (Alter, Medien, Vertrauen) erklären Vertrauen in Parteien (trstprt)?
+→ Multivariate Regression.
+
+Sind Länder mit niedrigem Vertrauen in nationale Institutionen politisch aktiver im Netz?
+→ Ländervergleich von trstplt mit Online-Aktivität pstplonl.
+
 # Dashboard 
 "About this Project", "General Insights/Descriptives", "General Findings", eventually "Implications/Predictions"
 -> 10min per person presentation, so don't do it more complicated than can be presented in 20min
