@@ -1,7 +1,7 @@
 # Research Questions
-1. How do levels of trust in the EU and UN vary across Western vs. Eastern European countries, and what role does immigration play in this?
-3. How do perceptions of political competence (internal efficacy) differ between younger and older people across democracies?
-4. Are younger people more politically competent because of greater media consumption, or despite lower political trust?
+A. How do levels of trust in the EU and UN vary across Western vs. Eastern European countries, and what role does immigration play in this?
+B. Are younger people more politically competent because of greater media consumption, or despite lower political trust?
+C. How do perceptions of political competence (internal efficacy) differ between younger and older people across democracies?
 
 # Dashboard 
 "About this Project", "General Insights/Descriptives", "General Findings", eventually "Implications/Predictions"
@@ -34,17 +34,17 @@ All variables are correct and have data.
 
 # Strategy 
 
-## 🧠 3. How do perceptions of political competence (internal efficacy) differ between younger and older people across democracies?
+## 3. How do perceptions of political competence (internal efficacy) differ between younger and older people across democracies?
   
   B. Digital divide question
   “Are younger people more politically competent because of greater media consumption, or despite lower political trust?”
   
-  – Contrasts age groups on polcmpl controlling for polintr, trstplt.
+  – Contrasts age groups on polcmpl controlling for polintr, trstplt
 
   C. Cross-country differences in the age gap
   “Is the age gap in political efficacy larger in countries with low political trust overall?”
   
-  – Interaction: agea × cntry, with country-level mean trstplt as contextual variable.
+  – Interaction: agea × cntry, with country-level mean trstplt as contextual variable
 
 ### Zeitplan für B
 - research question is clear and testable:
@@ -115,7 +115,7 @@ library(sjPlot)       # Model plots
 
 
 
-### nCode für B
+### Code für B
 
 Here's a tailored **R Markdown template** for your research question:
 
@@ -145,7 +145,7 @@ library(kableExtra)
 
 We explore this using the variable `polcmpl` (*"Politics is too complicated to understand"*) as a proxy for perceived political competence.
 
-### 📊 Data Preparation
+### Data Preparation
 
 ```{r load-and-clean}
 # Load your dataset (replace this with real loading code)
@@ -174,7 +174,7 @@ ess <- ess %>%
   )
 ```
 
-### 📈 Descriptive Statistics
+### Descriptive Statistics
 
 ```{r descriptives}
 ess %>%
@@ -196,7 +196,7 @@ ggplot(ess, aes(x = age_group, y = polcmpl_rev)) +
        y = "Perceived Competence (Higher = More)", x = "Age Group")
 ```
 
-### 🧮 Regression Models
+### Regression Models
 
 **Model 1: Age Group Only**
 
@@ -224,7 +224,7 @@ summary(mod3)
 
 ---
 
-### ✅ **Model 4: Add Media Use as Predictors**
+### **Model 4: Add Media Use as Predictors**
 
 ```r
 mod4 <- lm(polcmpl_rev ~ age_group + polintr_rev + trstplt + nwspol + netustm + netusoft, data = dt_raw)
@@ -235,7 +235,7 @@ summary(mod4)
 
 ---
 
-### ✅ **Model 5: Age × Media Interaction(s)**
+### **Model 5: Age × Media Interaction(s)**
 
 ```r
 mod5 <- lm(polcmpl_rev ~ age_group * nwspol + polintr_rev + trstplt, data = dt_raw)
@@ -251,7 +251,7 @@ summary(mod5b)
 
 ---
 
-### ✅ **Model 6: Media × Trust Interaction**
+### **Model 6: Media × Trust Interaction**
 
 ```r
 mod6 <- lm(polcmpl_rev ~ age_group + polintr_rev + trstplt * (nwspol + netustm + netusoft), data = dt_raw)
@@ -276,7 +276,7 @@ summary(mod7)
 ---
 
 
-### 📉 Visualizing Model Effects
+### Visualizing Model Effects
 
 ```{r effects-plot}
 plot_model(mod2, type = "eff", terms = c("age_group", "trstplt")) +
@@ -289,13 +289,13 @@ ggeffect(mod2, terms = "age_group") %>%
   labs(title = "Predicted Competence by Age Group", y = "Predicted Value")
 ```
 
-### 📝 Interpretation
+### Interpretation
 
 - Do younger people feel more or less politically competent?
 - Does trust in politicians explain this?
 - Does interest in politics moderate this relationship?
 
-### 📦 Appendix
+### Appendix
 
 - Variable definitions:
   - `polcmpl`: Politics too complicated to understand
@@ -307,8 +307,6 @@ ggeffect(mod2, terms = "age_group") %>%
   - Only countries X, Y, Z used
   - List any data exclusions
 
-```
-
 # Next Steps
 
 - Replace the **simulated data** with your actual ESS dataset.
@@ -319,10 +317,12 @@ Would you like help writing interpretation text or adding additional plots (e.g.
 
 
 
-## Zeitplan für C
+
+
+### Zeitplan für C
 -you’re looking at **cross-level interaction**: does the **individual-level relationship between age and political efficacy** vary **depending on country-level trust in politicians**? That’s a solid multilevel or contextual analysis structure.
 
-This Week (until ~03.05): Planning & Data Setup
+**This Week (until ~03.05): Planning & Data Setup**
 Goal: Prepare your data and structure your R Markdown file
 
 1. Finalize your variables
@@ -348,7 +348,7 @@ Goal: Prepare your data and structure your R Markdown file
      - Models
      - Interpretation
 
-Next Week (04.05 – 10.05): Descriptives & First Models
+**Next Week (04.05 – 10.05): Descriptives & First Models**
 Goal: Run and interpret basic models to test your interaction idea
 
 1. **Descriptive statistics**
@@ -370,7 +370,7 @@ Goal: Run and interpret basic models to test your interaction idea
      lmer(efficacy ~ age_centered * mean_trstplt_country + (1 | cntry), data = ...)
      ```
 
-Final Week (11.05 – 17.05): Clean-up & Polish
+**Final Week (11.05 – 17.05): Clean-up & Polish**
 Goal: Polish your Rmd and interpret key results clearly
 
 1. **Refine plots**
@@ -398,8 +398,6 @@ library(kableExtra)    # For clean tables in Rmd
 
 
 
-
-
 ## Beispiel Code für C
 
 code tailored to your project on **age, political efficacy, and country-level trust**. 
@@ -423,11 +421,11 @@ library(ggeffects)
 library(kableExtra)
 ```
 
-**🔍 Research Question**
+**Research Question**
 
 Do older and younger people feel differently about their ability to participate in politics, and is this age gap influenced by how much people in their country trust politicians?
 
-**📊 Data Preparation**
+**Data Preparation**
 
 ```{r load-data}
 # Example: Replace with your actual data loading method
@@ -461,7 +459,7 @@ ess <- ess %>%
   left_join(country_trust, by = "cntry")
 ```
 
-**📈 Descriptive Statistics**
+**Descriptive Statistics**
 
 ```{r descriptives}
 ess %>%
@@ -475,7 +473,7 @@ ess %>%
   kable_styling()
 ```
 
-**📉 Visual Exploration**
+**Visual Exploration**
 
 ```{r plot-efficacy-by-age}
 ggplot(ess, aes(x = agea, y = efficacy)) +
@@ -485,7 +483,7 @@ ggplot(ess, aes(x = agea, y = efficacy)) +
        x = "Age", y = "Efficacy Score")
 ```
 
-**🧮 Modeling**
+**Modeling**
 
 **Basic Linear Model with Interaction**
 
@@ -510,20 +508,19 @@ ggeffect(mod2, terms = c("age_c", "mean_trust")) %>%
        x = "Age (Centered)", y = "Predicted Political Efficacy")
 ```
 
-**📝 Interpretation**
+**Interpretation**
 
 - **Main effect of age**: Does political efficacy increase or decrease with age?
 - **Interaction**: Is the age effect stronger/weaker in high-trust countries?
 
 _Interpret results briefly in 2–3 bullet points._
 
-**📦 Appendix**
+**Appendix**
 
 - Variable definitions
 - Notes on missing data
 - References (ESS documentation, literature)
 
-```
 
 This gives you a clean base that:
 - Loads your data
