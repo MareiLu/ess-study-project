@@ -141,11 +141,11 @@ library(sjPlot)
 library(kableExtra)
 ```
 
-## Are younger people more politically competent because of greater media consumption, or despite lower political trust?
+# Are younger people more politically competent because of greater media consumption, or despite lower political trust?
 
 We explore this using the variable `polcmpl` (*"Politics is too complicated to understand"*) as a proxy for perceived political competence.
 
-# Data Preparation
+**Data Preparation**
 
 ```{r load-and-clean}
 # Load your dataset (replace this with real loading code)
@@ -174,7 +174,7 @@ ess <- ess %>%
   )
 ```
 
-# Descriptive Statistics
+**Descriptive Statistics**
 
 ```{r descriptives}
 ess %>%
@@ -196,7 +196,7 @@ ggplot(ess, aes(x = age_group, y = polcmpl_rev)) +
        y = "Perceived Competence (Higher = More)", x = "Age Group")
 ```
 
-# Regression Models
+**Regression Models**
 
 **Model 1: Age Group Only**
 
@@ -276,7 +276,7 @@ summary(mod7)
 ---
 
 
-# Visualizing Model Effects
+**Visualizing Model Effects**
 
 ```{r effects-plot}
 plot_model(mod2, type = "eff", terms = c("age_group", "trstplt")) +
@@ -289,7 +289,7 @@ ggeffect(mod2, terms = "age_group") %>%
   labs(title = "Predicted Competence by Age Group", y = "Predicted Value")
 ```
 
-# Interpretation
+**Interpretation**
 
 - Do younger people feel more or less politically competent?
 - Does trust in politicians explain this?
@@ -307,7 +307,7 @@ ggeffect(mod2, terms = "age_group") %>%
   - Only countries X, Y, Z used
   - List any data exclusions
 
-# Next Steps
+**Next Steps**
 
 - Replace the **simulated data** with your actual ESS dataset.
 - Adjust variable names if needed (e.g., `polintr` may be `polintr` or similar in your version).
