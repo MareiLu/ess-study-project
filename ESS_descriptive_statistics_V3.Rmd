@@ -1,0 +1,447 @@
+---
+title: "Project Study"
+output: html_document
+date: "2025-04-23"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Download Packages
+    
+```{r install-packages, eval=FALSE, include=FALSE}
+install.packages(c(
+  "tidyverse",  # Datenaufbereitung & Visualisierung
+  "skimr",      # Übersichtliche Daten-Zusammenfassung
+  "psych",      # Deskriptive Statistik
+  "rmarkdown",  # Für R Markdown selbst
+  "knitr",      # Code-Ausgabe in R Markdown
+  "tinytex",    # Nur für PDF-Export nötig
+  "labelled"
+  ))
+tinytex::install_tinytex()  # Nur beim ersten Mal notwendig
+```
+
+### Load Packages
+
+```{r load-packages, include=FALSE}
+library(tidyverse)   # Bündelt ggplot2, dplyr, readr, etc. – für Datenimport, -aufbereitung, Visualisierung
+library(skimr)       # Für übersichtliche Zusammenfassungen von Datensätzen
+library(psych)       # Für deskriptive Statistiken (z.B. Mittelwert, SD, Median)
+library(rmarkdown)   # Für das Erstellen von HTML/PDF-Dokumenten
+library(knitr)       # Macht Code-Ausgabe in R Markdown hübsch und steuerbar
+library(tinytex)     # Wird nur gebraucht, wenn du PDF-Dateien erstellst
+library(labelled)
+library(dplyr)
+```
+
+### Loading data
+
+```{r}
+###Importing Data
+
+setwd("/Users/test/Documents/Studium/Semester 6/Project Study")
+
+dt_raw <- haven::read_sav(file.choose())
+
+```
+
+
+
+```{r}
+###Research Question
+# - Ursprüngliche Frage: “Are younger people more politically competent because of greater media consumption, or despite lower political trust?” --> umgeändert zu "Do media consumption or political trust affect political competency differently among different age groups?"
+# - Problem: Political competent variable (polcmpl) only available from rounds 1-4, media variables only available from rounds 8-11 --> new research question necessary
+
+# - Erste mögliche alternative Frage: "Are younger people more interested in politics because of higher media use, despite lower trust in politicians?" --> Outcome variable ist political interest
+
+# - Zweite mögliche alternativeFrage: "How does higher media consumption affect political trust among different age groups and what role does political interest in this?" --> Outcome variable ist political trust
+
+
+###Data & Variables
+#Dataset
+head(dt_raw)
+#view(dt_raw)
+nrow(dt_raw)
+ncol(dt_raw)
+
+#Variables we are working with
+table(dt_raw$polcmpl, useNA = "always") #perceived political complexity, only ESS round 1-4
+table(dt_raw$agea, useNA = "always") #turn into age group (<30, 30–59, 60+)
+table(dt_raw$polintr, useNA = "always") #political interest
+table(dt_raw$trstplt, useNA = "always") #trust in politicians
+table(dt_raw$cntry, useNA = "always") #country
+table(dt_raw$nwspol, useNA = "always") #Time spent on news about politics and current affairs, only ESS round 8-11
+table(dt_raw$netustm, useNA = "always") #Time spent on internet per day, only ESS round 8-11
+table(dt_raw$netusoft, useNA = "always") #Frequency of internet use, higher = more frequently, only ESS round 8-11
+
+#polcmpl
+dt_raw %>%
+  summarise(
+    mean = mean(polcmpl, na.rm = TRUE),
+    sd = sd(polcmpl, na.rm = TRUE),
+    min = min(polcmpl, na.rm = TRUE),
+    max = max(polcmpl, na.rm = TRUE),
+    n = sum(!is.na(polcmpl))
+  )
+
+#agea
+dt_raw %>%
+  summarise(
+    mean = mean(agea, na.rm = TRUE),
+    sd = sd(agea, na.rm = TRUE),
+    min = min(agea, na.rm = TRUE),
+    max = max(agea, na.rm = TRUE),
+    n = sum(!is.na(agea))
+  )
+
+#polintr
+dt_raw %>%
+  summarise(
+    mean = mean(polintr, na.rm = TRUE),
+    sd = sd(polintr, na.rm = TRUE),
+    min = min(polintr, na.rm = TRUE),
+    max = max(polintr, na.rm = TRUE),
+    n = sum(!is.na(polintr))
+  )
+
+#trstplt
+dt_raw %>%
+  summarise(
+    mean = mean(trstplt, na.rm = TRUE),
+    sd = sd(trstplt, na.rm = TRUE),
+    min = min(trstplt, na.rm = TRUE),
+    max = max(trstplt, na.rm = TRUE),
+    n = sum(!is.na(trstplt))
+  )
+
+#cntry
+dt_raw %>%
+  summarise(
+    min = min(cntry, na.rm = TRUE),
+    max = max(cntry, na.rm = TRUE),
+    n = sum(!is.na(cntry))
+  )
+
+#nwspol
+dt_raw %>%
+  summarise(
+    mean = mean(nwspol, na.rm = TRUE),
+    sd = sd(nwspol, na.rm = TRUE),
+    min = min(nwspol, na.rm = TRUE),
+    max = max(nwspol, na.rm = TRUE),
+    n = sum(!is.na(nwspol))
+  )
+
+#netustm
+dt_raw %>%
+  summarise(
+    mean = mean(netustm, na.rm = TRUE),
+    sd = sd(netustm, na.rm = TRUE),
+    min = min(netustm, na.rm = TRUE),
+    max = max(netustm, na.rm = TRUE),
+    n = sum(!is.na(netustm))
+  )
+
+#netusoft
+dt_raw %>%
+  summarise(
+    mean = mean(netusoft, na.rm = TRUE),
+    sd = sd(netusoft, na.rm = TRUE),
+    min = min(netusoft, na.rm = TRUE),
+    max = max(netusoft, na.rm = TRUE),
+    n = sum(!is.na(netusoft))
+  )
+
+
+#Data Preparation: Filtering to rounds 8-11, recoding age group and reversing the scale for polintr (higher number = more interested)
+
+dt_new <- dt_raw %>%
+  filter(essround %in% 8:11) %>%
+  mutate(
+    age_group = case_when(
+      agea < 30 ~ "<30",
+      agea >= 30 & agea <= 59 ~ "30–59",
+      agea >= 60 ~ "60+"
+    ))  %>%
+  mutate(
+    age_group = factor(age_group, levels = c("<30", "30–59", "60+")),
+    polintr_rev = 5 - polintr  # higher = more interested
+    )
+
+#age_group
+table(dt_new$age_group, useNA = "always")
+
+```
+
+```{r}
+####Descriptive Statistics
+
+#Summary statistics of polintr_rev by country (code for just one variable)
+dt_new %>% 
+  group_by(cntry) %>% 
+  summarise(mean   = mean(polintr_rev, na.rm = TRUE),
+            median = median(polintr_rev, na.rm = TRUE),
+            Q5     = quantile(polintr_rev, .05, na.rm = TRUE),
+            Q95    = quantile(polintr_rev, .95, na.rm = TRUE))
+
+
+#Summary statistics of all variables by country (code for all variables)
+dt_new %>%
+  group_by(cntry) %>%
+  summarise(across(
+    c(polintr_rev, trstplt, nwspol, netustm, netusoft),
+    list(mean = ~mean(.x, na.rm = TRUE),
+         median = ~median(.x, na.rm = TRUE),
+         Q5 = ~quantile(.x, 0.05, na.rm = TRUE),
+         Q95 = ~quantile(.x, 0.95, na.rm = TRUE))
+  ))
+
+
+#Summary statistics of variables by age group
+dt_raw %>%
+  group_by(age_group) %>%
+  summarise(across(
+    c(polintr_rev, trstplt, nwspol, netustm, netusoft),
+    list(mean = ~mean(.x, na.rm = TRUE),
+         median = ~median(.x, na.rm = TRUE),
+         Q5 = ~quantile(.x, 0.05, na.rm = TRUE),
+         Q95 = ~quantile(.x, 0.95, na.rm = TRUE))
+  ))
+
+
+#Plotting polintr_rev vs. age group
+ggplot(dt_new, aes(x = age_group, y = polintr_rev)) +
+  geom_boxplot(fill = "#69b3a2") +
+  labs(title = "Political Interest by Age Group",
+       y = "Political Interest (Higher = More)", x = "Age Group")
+
+
+#Plotting average political trust vs. age group
+dt_new %>%
+  group_by(age_group) %>%
+  summarise(mean_trust = mean(trstplt, na.rm = TRUE)) %>%
+  ggplot(aes(x = age_group, y = mean_trust, fill = age_group)) +
+  geom_col() +
+  labs(title = "Average Political Trust by Age Group", y = "Political Trust")
+
+
+#Plotting Media use by age group
+library(tidyr)
+
+dt_long <- dt_new %>%
+  select(age_group, nwspol, netustm, netusoft) %>%
+  pivot_longer(cols = c(nwspol, netustm, netusoft), names_to = "media_type", values_to = "value")
+
+dt_long %>%
+  group_by(age_group, media_type) %>%
+  summarise(mean_value = mean(value, na.rm = TRUE)) %>%
+  ggplot(aes(x = age_group, y = mean_value, color = media_type, group = media_type)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  labs(title = "Media Use by Age Group", y = "Average Use", x = "Age Group")
+
+
+#Plotting political interest vs. trust (colored by age group)
+ggplot(dt_new, aes(x = trstplt, y = polintr_rev, color = age_group)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm") +
+  labs(title = "Political Interest vs. Political Trust by Age Group")
+
+
+#Plotting political interest vs. time spent on news on politics by age group
+ggplot(dt_new, aes(x = nwspol, y = polintr_rev, color = age_group)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm") +
+  labs(title = "Political Interest vs. Time spent on Politics News by Age Group")
+
+
+#Plotting political interest vs. time spent on internet by age group
+ggplot(dt_new, aes(x = netustm, y = polintr_rev, color = age_group)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm") +
+  labs(title = "Political Interest vs. Time spent on Internet by Age Group")
+
+
+#Plotting political trust vs. time spent on internet by age group
+ggplot(dt_new, aes(x = netustm, y = trstplt, color = age_group)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm") +
+  labs(title = "Political Trust vs. Time spent on Internet by Age Group")
+
+
+#Plotting political trust vs. time spent on politics by age group
+ggplot(dt_new, aes(x = nwspol, y = trstplt, color = age_group)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm") +
+  labs(title = "Political Trust vs. Time spent on Politics News by Age Group")
+
+
+#Plotting time spent on internet vs. time spent on politics by age group
+ggplot(dt_new, aes(x = nwspol, y = netustm, color = age_group)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm") +
+  labs(title = "Time spent on internet vs. Time spent on Political News by Age Group")
+
+
+#Correlation matrix: polintr, trstplt, nwspol, netustm, netusoft, age
+# Select relevant variables
+dt_subset <- dt_raw %>% select(polintr_rev, trstplt, nwspol, netustm, netusoft, agea)
+
+# Calculate correlation matrix (pairwise complete cases)
+cor(dt_subset, use = "pairwise.complete.obs")
+
+```
+
+```{r}
+###Models
+
+options(scipen = 999) #to get whole numbers in the output
+
+
+### Political Interest as outcome variable
+
+#1. Age group only
+mod1 <- lm(polintr_rev ~ age_group, data = dt_new)
+summary(mod1)
+
+#Intercept = 2.145 → This is the mean value of the outcome (e.g. polintr_rev, political interest reversed) for people under 30 (<30).
+#age_group30–59 = 0.219 → People aged 30–59 score on average 0.219 points higher than those under 30, all else equal.
+#age_group60+ = 0.369 → People aged 60+ score on average 0.369 points higher than those under 30
+#--> political interest higher for older people
+
+
+
+#2. Adding trstplt as control variable
+mod2 <- lm(polintr_rev ~ age_group + trstplt, data = dt_new)
+summary(mod2)
+
+#Age and trust both positively predict political interest (reversed scale)
+#Older people and more trusting people are more interested in politics (as measured by reversed scale)
+
+
+
+#3. Interaction with trust to see if trust matters more/less by age
+mod3 <- lm(polintr_rev ~ age_group + trstplt + age_group * trstplt , data = dt_new)
+summary(mod3)
+
+#model tells us how the slope for trust differs by age group
+#30–59-year-olds: Slope = 0.066 + 0.028 = 0.094 -> They are more responsive to political trust than under-30s
+#60+ year-olds: Slope = 0.066 + 0.029 = 0.095 -> Also more responsive than under-30s
+#Political trust predicts political interest more strongly in older age groups than in younger people
+
+
+
+#4. adding media use as predictors
+mod4 <- lm(polintr_rev ~ age_group + trstplt + nwspol + netustm + netusoft, data = dt_new)
+summary(mod4)
+# small coefficients but also small unit scale of variables (measured in minutes)
+#Intercept:	1.1557 is predicted political interest (reversed) for reference group (age <30, with 0 trust/media use)
+#age_group30–59: +0.297 -> This age group scores 0.297 higher than under 30s, holding all else constant
+#age_group60+: +0.664 -> This group scores 0.664 higher than under 30s
+#trstplt: +0.0838 -> For each one-unit increase in political trust, political interest goes up by 0.084
+#nwspol (news about politics freq): +0.00069 -> For each unit increase, very small increase in interest (measured in minutes)
+#netustm (internet use)	+0.00044	Also small but significant effect (measured in minutes)
+#netusoft (internet use)	+0.106	One of the larger media effects (measured on scale)
+
+
+
+#5. Full interaction model: adding age*media interaction to see if the effect of news consumption differs by age group
+mod5 <- lm(polintr_rev ~ age_group * (trstplt + nwspol + netustm + netusoft), data = dt_new)
+summary(mod5)
+
+#Political trust is a strong predictor of political interest for all age groups, but it's especially strong for middle-aged adults (30–59)
+#Political news consumption predicts greater interest in all age groups, with the effect slightly stronger among 60+
+#General time online has a positive effect for under-30s and middle-aged groups, but the effect weakens for older adults, nearly disappearing
+#Frequency of internet use predicts higher political interest in under-30s only; no significant age-based moderation
+
+
+
+#6. Also possible: Stepwise interaction for each media variable individually
+mod5b <- lm(polintr_rev ~ age_group + trstplt + nwspol + age_group * nwspol, data = dt_new)
+summary(mod5b)
+
+
+
+#7. interaction between media*trust to explore whether the impact of trust on political interest depends on media usage patterns.
+mod6 <- lm(polintr_rev ~ age_group + trstplt * (nwspol + netustm + netusoft), data = dt_new)
+summary(mod6)
+
+
+
+#8. Fully Saturated Model (all Interactions) but only if we have enough data and want to explore complex interactions
+mod7 <- lm(polintr_rev ~ age_group * (nwspol + netustm + netusoft) +
+                            trstplt * (nwspol + netustm + netusoft), data = dt_raw)
+summary(mod7)
+
+
+
+#Comparing all models
+install.packages("modelsummary", type = "binary")
+library(modelsummary)
+
+modelsummary(
+  list(
+    "Model 1" = mod1,
+    "Model 2" = mod2,
+    "Model 3" = mod3,
+    "Model 4" = mod4,
+    "Model 5" = mod5,
+    "Model 6" = mod6,
+    "Model 7" = mod7
+  ),
+  statistic = "std.error",  # or "conf.int" if you prefer confidence intervals
+  stars = TRUE,
+  title = "Table: Predicting Political Interest"
+)
+
+
+
+### Political Trust as outcome variable (to see if results are more interesting)
+
+#1. Age group and political interest as control variables
+mod8 <- lm(trstplt ~ age_group + polintr_rev, data = dt_new)
+summary(mod8)
+
+
+
+#2.Interaction with political interest to see if it matters more/less by age
+mod9 <- lm(trstplt ~ age_group + polintr_rev + age_group * polintr_rev , data = dt_new)
+summary(mod9)
+
+
+
+#3. adding media use as predictors
+mod10 <- lm(trstplt ~ age_group + polintr_rev + nwspol + netustm + netusoft, data = dt_new)
+summary(mod10)
+
+
+
+#4. Full interaction model: adding age*media interaction to see if the effect of news consumption differs by age group
+mod11 <- lm(trstplt ~ age_group * (polintr_rev + nwspol + netustm + netusoft), data = dt_new)
+summary(mod11)
+
+#Political interest increases political trust most for older age groups
+#Time spent online (netustm) is negatively related to political trust — but this relationship changes with age:
+# -It’s less negative for 30–59-year-olds, and more negative for people aged 60+
+# -Political news use and soft media use don’t show clear or consistent age-based differences
+
+
+
+#5. interaction between media*political interest to explore whether the impact of interest on trust depends on media usage patterns.
+mod12 <- lm(trstplt ~ age_group + polintr_rev * (nwspol + netustm + netusoft), data = dt_new)
+summary(mod12)
+
+#Political interest is a strong predictor of political trust
+#Older people are slightly less trusting, controlling for other variables
+#Media use interacts with interest:
+# - Political interest leads to more trust, but less so among people who are more exposed to political news and who are online more
+# - In other words, the more media people consume, the weaker the link between political engagement and trust becomes
+
+```
+
