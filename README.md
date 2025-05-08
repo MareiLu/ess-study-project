@@ -224,7 +224,7 @@ summary(mod3)
 
 ---
 
-# **Model 4: Add Media Use as Predictors**
+**Model 4: Add Media Use as Predictors**
 
 ```r
 mod4 <- lm(polcmpl_rev ~ age_group + polintr_rev + trstplt + nwspol + netustm + netusoft, data = dt_raw)
@@ -235,7 +235,7 @@ summary(mod4)
 
 ---
 
-# **Model 5: Age × Media Interaction(s)**
+**Model 5: Age × Media Interaction(s)**
 
 ```r
 mod5 <- lm(polcmpl_rev ~ age_group * nwspol + polintr_rev + trstplt, data = dt_raw)
@@ -251,7 +251,7 @@ summary(mod5b)
 
 ---
 
-# **Model 6: Media × Trust Interaction**
+**Model 6: Media × Trust Interaction**
 
 ```r
 mod6 <- lm(polcmpl_rev ~ age_group + polintr_rev + trstplt * (nwspol + netustm + netusoft), data = dt_raw)
@@ -262,7 +262,7 @@ summary(mod6)
 
 ---
 
-# **Model 7: Fully Saturated Model (All Interactions)**
+**Model 7: Fully Saturated Model (All Interactions)**
 
 Only do this if you have enough data and want to explore complex interactions:
 
