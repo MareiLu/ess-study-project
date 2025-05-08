@@ -34,18 +34,6 @@ All variables are correct and have data.
 
 # Strategy 
 
-## 3. How do perceptions of political competence (internal efficacy) differ between younger and older people across democracies?
-  
-  B. Digital divide question
-  “Are younger people more politically competent because of greater media consumption, or despite lower political trust?”
-  
-  – Contrasts age groups on polcmpl controlling for polintr, trstplt
-
-  C. Cross-country differences in the age gap
-  “Is the age gap in political efficacy larger in countries with low political trust overall?”
-  
-  – Interaction: agea × cntry, with country-level mean trstplt as contextual variable
-
 ## Zeitplan für B
 - research question is clear and testable:
 > “Are younger people more politically competent because of greater media consumption, or despite lower political trust?”
@@ -320,8 +308,14 @@ Would you like help writing interpretation text or adding additional plots (e.g.
 
 
 ## Zeitplan für C
+## C. How do perceptions of political competence (internal efficacy) differ between younger and older people across democracies?
+  
+  C. Cross-country differences in the age gap
+  “Is the age gap in political efficacy larger in countries with low political trust overall?”
+  
+  – Interaction: agea × cntry, with country-level mean trstplt as contextual variable
 -you’re looking at **cross-level interaction**: does the **individual-level relationship between age and political efficacy** vary **depending on country-level trust in politicians**? That’s a solid multilevel or contextual analysis structure.
-
+  
 **This Week (until ~03.05): Planning & Data Setup**
 Goal: Prepare your data and structure your R Markdown file
 
