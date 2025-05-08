@@ -46,7 +46,7 @@ All variables are correct and have data.
   
   – Interaction: agea × cntry, with country-level mean trstplt as contextual variable
 
-### Zeitplan für B
+## Zeitplan für B
 - research question is clear and testable:
 > “Are younger people more politically competent because of greater media consumption, or despite lower political trust?”
 
@@ -115,7 +115,7 @@ library(sjPlot)       # Model plots
 
 
 
-### Code für B
+## Code für B
 
 Here's a tailored **R Markdown template** for your research question:
 
@@ -319,7 +319,7 @@ Would you like help writing interpretation text or adding additional plots (e.g.
 
 
 
-### Zeitplan für C
+## Zeitplan für C
 -you’re looking at **cross-level interaction**: does the **individual-level relationship between age and political efficacy** vary **depending on country-level trust in politicians**? That’s a solid multilevel or contextual analysis structure.
 
 **This Week (until ~03.05): Planning & Data Setup**
