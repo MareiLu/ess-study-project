@@ -129,7 +129,7 @@ library(sjPlot)
 library(kableExtra)
 ```
 
-# Are younger people more politically competent because of greater media consumption, or despite lower political trust?
+**Are younger people more politically competent because of greater media consumption, or despite lower political trust?**
 
 We explore this using the variable `polcmpl` (*"Politics is too complicated to understand"*) as a proxy for perceived political competence.
 
@@ -283,7 +283,7 @@ ggeffect(mod2, terms = "age_group") %>%
 - Does trust in politicians explain this?
 - Does interest in politics moderate this relationship?
 
-# Appendix
+**Appendix**
 
 - Variable definitions:
   - `polcmpl`: Politics too complicated to understand
@@ -308,7 +308,7 @@ Would you like help writing interpretation text or adding additional plots (e.g.
 
 
 ## Zeitplan für C
-## C. How do perceptions of political competence (internal efficacy) differ between younger and older people across democracies?
+**C. How do perceptions of political competence (internal efficacy) differ between younger and older people across democracies?**
   
   C. Cross-country differences in the age gap
   “Is the age gap in political efficacy larger in countries with low political trust overall?”
