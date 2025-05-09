@@ -15,6 +15,7 @@ Gibt es einen Zusammenhang zwischen der Dauer politischer Nachrichtennutzung (nw
 # Alternative Forschungsfragen – Bereich C: Politisches Vertrauen
 Vertrauen junge Menschen weniger in internationale Institutionen wie die UN oder die EU?
 → agea → trstun, trstep.
+Welche Faktoren spielen eine Rolle beim Vertrauen in EU unf UN?
 
 Hängt Vertrauen in Polizei oder Justiz mit dem Vertrauen in politische Institutionen zusammen?
 → Korrelationsmatrix zwischen trstplc, trstlgl, trstplt, trstprt.
