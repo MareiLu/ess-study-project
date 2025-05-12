@@ -1,0 +1,240 @@
+---
+title: "Project Study"
+author: "Helena Zappe"
+date: "2025-05-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Download Packages
+
+```{r install-packages, eval=FALSE, include=FALSE}
+install.packages(c(
+  "tidyverse",  # Datenaufbereitung & Visualisierung
+  "skimr",      # Übersichtliche Daten-Zusammenfassung
+  "psych",      # Deskriptive Statistik
+  "rmarkdown",  # Für R Markdown selbst
+  "knitr",      # Code-Ausgabe in R Markdown
+  "tinytex",    # Nur für PDF-Export nötig
+  "labelled"
+  ))
+tinytex::install_tinytex()  # Nur beim ersten Mal notwendig
+```
+
+# Load Packages
+
+```{r load-packages, include=FALSE}
+library(tidyverse)   # Bündelt ggplot2, dplyr, readr, etc. – für Datenimport, -aufbereitung, Visualisierung
+library(skimr)       # Für übersichtliche Zusammenfassungen von Datensätzen
+library(psych)       # Für deskriptive Statistiken (z.B. Mittelwert, SD, Median)
+library(rmarkdown)   # Für das Erstellen von HTML/PDF-Dokumenten
+library(knitr)       # Macht Code-Ausgabe in R Markdown hübsch und steuerbar
+library(tinytex)     # Wird nur gebraucht, wenn du PDF-Dateien erstellst
+library(labelled)
+library(dplyr)
+```
+
+# Loading data
+
+```{r}
+
+setwd("/Users/test/Documents/Studium/Semester 6/Project Study")
+
+dt_raw <- haven::read_sav(file.choose())
+
+```
+
+# Variables
+
+## Research Question: "What shapes trust in the European Union and United Nations in Poland, Germany, and Slovenia? A comparative analysis of political attitudes, ideology, and socio-demographics."
+
+```{r}
+
+polintr        # Political interest
+imwbcnt        # Immigration attitude (higher = better view)
+lrscale        # Ideology
+stfdem         # Satisfaction with democracy
+stfgov         # Satisfaction with government
+eduyrs         # Education level
+trstplt        # Trust in politicians
+age_group      # Moderator
+cntry          # Countries   
+nwspol         # News about politics
+
+trstun         # Trust in UN
+trstep         # Trust in EU
+```
+
+# Data Preparation
+
+```{r}
+#filtering to our countries and recoding age group and reversing the scale for polintr (higher number = more interested)
+dt_new <- dt_raw %>%
+  filter(cntry %in% c("DE", "PL", "SI")) %>%
+  mutate(
+    age_group = case_when(
+      agea < 18 ~ "<18",
+      agea >=18 & agea <= 24 ~ "18-24",
+      agea > 24 & agea <= 34 ~ "25-34",
+      agea > 34 & agea <= 44 ~ "35-44",
+      agea > 44 & agea <= 54 ~ "45–54",
+      agea > 54 & agea <= 64 ~ "55-64",
+      agea > 64 ~ "65+"
+    ))  %>%
+  mutate(
+    age_group = factor(age_group, levels = c("<18", "18-24", "25-34", "35-44", "45–54", "55-64", "65+")),
+    polintr_rev = 5 - polintr  # higher = more interested
+    )
+
+table(dt_new$age_group, useNA = "always")
+table(dt_new$cntry, useNA = "always")
+
+```
+
+# Descriptive Statistics
+
+```{r}
+
+# trust in EU and UN over time for all three countries (flow chart)
+# predictors for each country
+# age groups per country (young or old country)
+# satisfaction with government and democracy for each country
+
+#Summary statistics of variables by age group
+dt_new %>%
+  group_by(age_group) %>%
+  summarise(across(
+    c(polintr_rev, eduyrs, lrscale, stfdem, stfgov, imwbcnt, polintr, trstplt, trstun, trstep),
+    list(mean = ~mean(.x, na.rm = TRUE),
+         median = ~median(.x, na.rm = TRUE),
+         Q5 = ~quantile(.x, 0.05, na.rm = TRUE),
+         Q95 = ~quantile(.x, 0.95, na.rm = TRUE))
+  ))
+
+#declining trust with age
+
+dt_new %>%
+  group_by(cntry) %>%
+  summarise(across(
+    c(trstplt, trstun, trstep),
+    list(mean = ~mean(.x, na.rm = TRUE),
+         median = ~median(.x, na.rm = TRUE),
+         Q5 = ~quantile(.x, 0.05, na.rm = TRUE),
+         Q95 = ~quantile(.x, 0.95, na.rm = TRUE))
+  ))
+
+#big differences across countries
+```
+
+# Visualization
+
+```{r}
+
+#Plotting average political interest vs. age group
+dt_new %>%
+  group_by(age_group) %>%
+  summarise(mean_interest = mean(polintr_rev, na.rm = TRUE)) %>%
+  ggplot(aes(x = age_group, y = mean_interest, fill = age_group)) +
+  geom_col() +
+  labs(title = "Average Political Interest by Age Group", y = "Political Interest")
+
+#Plotting average trust in EU vs. age group
+dt_new %>%
+  group_by(age_group) %>%
+  summarise(mean_trust = mean(trstep, na.rm = TRUE)) %>%
+  ggplot(aes(x = age_group, y = mean_trust, fill = age_group)) +
+  geom_col() +
+  labs(title = "Average Trust in EU by Age Group", y = "Trust in EU")
+
+#Plotting average trust in UN vs. age group
+dt_new %>%
+  group_by(age_group) %>%
+  summarise(mean_trust = mean(trstun, na.rm = TRUE)) %>%
+  ggplot(aes(x = age_group, y = mean_trust, fill = age_group)) +
+  geom_col() +
+  labs(title = "Average Trust in UN by Age Group", y = "Trust in UN")
+
+
+  ## Compute mean trust in UN per country
+  country_means <- dt_new %>%
+    group_by(cntry) %>%
+    summarise(mean_trstun = mean(trstun, na.rm = TRUE))
+  
+  # Plot
+  ggplot(country_means, aes(x = cntry, y = mean_trstun)) +
+    geom_point(size = 3, color = "steelblue") +
+    labs(title = "Mean Trust in UN by Country", y = "Mean Trust in UN", x = "Country") +
+    theme_minimal()
+  
+
+## Compute means per country and age group
+group_means <- dt_new %>%
+  group_by(cntry, age_group) %>%
+  summarise(mean_trstun = mean(trstun, na.rm = TRUE), .groups = "drop")
+
+# Plot
+ggplot(group_means, aes(x = cntry, y = mean_trstun, color = age_group)) +
+  geom_point(size = 3, position = position_dodge(width = 0.5)) +
+  labs(title = "Mean Trust in UN by Country and Age Group",
+       y = "Mean Trust in UN", x = "Country") +
+  theme_minimal()
+
+#big differences among countries and age groups within the countries
+
+#Correlation matrix
+# Select relevant variables
+dt_subset <- dt_new %>% select(trstun, trstep, polintr, imwbcnt, lrscale, stfdem, stfgov, eduyrs, trstplt, agea) #I use agea because age_group is a fator variable which I can not use for correlation matrix
+
+# Calculate correlation matrix (pairwise complete cases)
+cor(dt_subset, use = "pairwise.complete.obs")
+
+
+```
+
+# Models
+## Trust in UN
+
+```{r}
+
+options(scipen = 999) #to get whole numbers in the output
+
+#1. Age group only
+mod1 <- lm(trstep ~ age_group, data = dt_new)
+summary(mod1)
+
+#2. Adding trstplt as control variable
+mod2 <- lm(trstep ~ age_group + trstplt, data = dt_new)
+summary(mod2)
+
+#3. Interaction with trust to see if trust matters more/less by age
+mod3 <- lm(trstep ~ age_group + trstplt + age_group * trstplt , data = dt_new)
+summary(mod3)
+
+#4. adding predictors
+mod4 <- lm(trstep ~ age_group + trstplt + polintr + imwbcnt + lrscale + stfdem + stfgov + eduyrs, data = dt_new)
+summary(mod4)
+
+#5. Full interaction model: adding age*media interaction to see if the effect of news consumption differs by age group
+mod5 <- lm(trstep ~ age_group * (trstplt + polintr + imwbcnt + lrscale + stfdem + stfgov + eduyrs), data = dt_new)
+summary(mod5)
+
+#7. interaction between media*trust to explore whether the impact of trust on political interest depends on media usage patterns.
+mod6 <- lm(polintr_rev ~ age_group + trstplt * (nwspol + netustm + netusoft), data = dt_new)
+summary(mod6)
+
+#8. Fully Saturated Model (all Interactions) but only if we have enough data and want to explore complex interactions
+mod7 <- lm(polintr_rev ~ age_group * (nwspol + netustm + netusoft) +
+                            trstplt * (nwspol + netustm + netusoft), data = dt_raw)
+summary(mod7)
+
+
+
+```
+
+## Trust in EU
+
+# Implications / Predictions
+
