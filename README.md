@@ -30,6 +30,11 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 
 All variables are correct and have data. 
 
+# Country Color Code
+- Germany Blue #33658a
+- Poland Light Orange #f6ae2d
+- Slowenia Pink Dark Orande #f26419
+
 # 1. Descriptives & Visualization / General Insights
 - trust plots by country (flowchart, all rounds, all countries)
 - plots each confounder variable (over time, all countries)
@@ -44,4 +49,7 @@ All variables are correct and have data.
 # 3. About this Project
 Text about main findings & why these countries
 
-# Implications/Prediction
+# 4. Implications/Prediction
+
+# Questions
+- Do we need weights?
