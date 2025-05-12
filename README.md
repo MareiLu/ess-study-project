@@ -6,6 +6,8 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 -> 10min per person presentation, so don't do it more complicated than can be presented in 20min
 -> for the paper doesn't matter between 8-12 pages 
 
+-> maybe separate the "General Insights/Descriptives" into the groups mentioned in the research question: political attitudes, ideology, and socio-demographics (kann man so Untertabs erstellen?)
+
 # Important variables
 
 ### Political competence:
