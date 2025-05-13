@@ -1,7 +1,7 @@
 ---
-title: "Project Study"
-author: "Helena Zappe"
-date: "2025-05-09"
+title: "Project Study - Data Presemtation"
+author: "Helena Zappe & Marei Göbelbecker"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
@@ -9,67 +9,74 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r install-packages, eval=FALSE, include=FALSE}
+
 # Download Packages
 
-```{r install-packages, eval=FALSE, include=FALSE}
 install.packages(c(
-  "tidyverse",  # Datenaufbereitung & Visualisierung
-  "skimr",      # Übersichtliche Daten-Zusammenfassung
-  "psych",      # Deskriptive Statistik
-  "rmarkdown",  # Für R Markdown selbst
-  "knitr",      # Code-Ausgabe in R Markdown
-  "tinytex",    # Nur für PDF-Export nötig
-  "labelled"
+  "tidyverse",  
+  "skimr",      
+  "psych",      
+  "rmarkdown",  
+  "knitr",      
+  "tinytex",    
+  "labelled",
+  "here"
   ))
-tinytex::install_tinytex()  # Nur beim ersten Mal notwendig
+tinytex::install_tinytex()  
 ```
+
+```{r load_packages, include=FALSE}
 
 # Load Packages
 
-```{r load-packages, include=FALSE}
-library(tidyverse)   # Bündelt ggplot2, dplyr, readr, etc. – für Datenimport, -aufbereitung, Visualisierung
-library(skimr)       # Für übersichtliche Zusammenfassungen von Datensätzen
-library(psych)       # Für deskriptive Statistiken (z.B. Mittelwert, SD, Median)
-library(rmarkdown)   # Für das Erstellen von HTML/PDF-Dokumenten
-library(knitr)       # Macht Code-Ausgabe in R Markdown hübsch und steuerbar
-library(tinytex)     # Wird nur gebraucht, wenn du PDF-Dateien erstellst
+library(haven)
+library(tidyverse)   
+library(skimr)       
+library(psych)       
+library(rmarkdown)   
+library(knitr)       
+library(tinytex)     
 library(labelled)
 library(dplyr)
-library(ggplot2)
-library(tidyr)
-library(forcats)
+library(here)
 ```
 
-# Loading data
+```{r raw_data, include=FALSE}
 
-```{r}
+# Load Raw Data
 
-setwd("/Users/test/Documents/Studium/Semester 6/Project Study")
-
-dt_raw <- haven::read_sav(file.choose())
+dt_raw <- read_sav(here("data","ESS_data_raw.sav")) 
 
 ```
 
-### Research Question: "What shapes trust in the European Union and United Nations in Poland, Germany, and Slovenia? A comparative analysis of political attitudes, ideology, and socio-demographics."
+# "What shapes trust in the European Union and United Nations in Poland, Germany, and Slovenia? A comparative analysis of political attitudes, ideology, and socio-demographics."
 
-# Variables
+## Variables
 
-```{r}
+*Dependent Variables ("International Institutions"):*
 
-#polintr        # Political interest
-#imwbcnt        # Immigration attitude (higher = better view)
-#lrscale        # Ideology
-#stfdem         # Satisfaction with democracy
-#stfgov         # Satisfaction with government
-#eduyrs         # Education level
-#trstplt        # Trust in politicians
-#age_group      # Moderator
-#cntry          # Countries   
-#nwspol         # News about politics
+-   **trstun:** Trust in UN
+-   **trstep:** Trust in EU
 
-#trstun         # Trust in UN
-#trstep         # Trust in EU
-```
+*Country Codes:*
+
+-   **cntry:** Countries ➝ DE, PL, SI
+
+*Differences in age groups:*
+
+-   **age_group:** Moderator (grouped agea)
+
+*Independent Variables of Interest:*
+
+-   **polintr:** Political interest
+-   **imwbcnt:** Immigration attitude (higher = better view)
+-   **lrscale:** Ideology
+-   **stfdem:** Satisfaction with democracy
+-   **stfgov:** Satisfaction with government
+-   **eduyrs:** Education level
+-   **trstplt:** Trust in politicians
+-   **nwspol:** News about politics
 
 # Data Preparation
 
@@ -77,34 +84,40 @@ dt_raw <- haven::read_sav(file.choose())
 -   recoding age group
 -   reversing the scale for polintr (higher number = more interested)
 
-```{r}
+```{r data_preparation}
 
 dt_new <- dt_raw %>%
-  filter(cntry %in% c("DE", "PL", "SI")) %>%
+  filter(cntry %in% c("DE", "PL", "SI")) %>%  
   mutate(
     age_group = case_when(
-      agea < 18 ~ "<18",
+      agea < 18 ~ "<18",                      
       agea >=18 & agea <= 24 ~ "18-24",
       agea > 24 & agea <= 34 ~ "25-34",
       agea > 34 & agea <= 44 ~ "35-44",
       agea > 44 & agea <= 54 ~ "45–54",
       agea > 54 & agea <= 64 ~ "55-64",
       agea > 64 ~ "65+"
-    ))  %>%
+    ))  %>%                                   
   mutate(
     age_group = factor(age_group, levels = c("<18", "18-24", "25-34", "35-44", "45–54", "55-64", "65+")),
-    polintr_rev = 5 - polintr  # higher = more interested
+    polintr_rev = 5 - polintr  # higher = more interested               
     )
+```
+
+```{r}
+# Checking the new coding
 
 table(dt_new$age_group, useNA = "always")
 table(dt_new$cntry, useNA = "always")
+table(dt_new$polintr_rev, useNA = "always")
 
 ```
 
 # Descriptive Statistics
-## Summary Statistics of Variables by Country
 
-```{r}
+## Summary Statistics of all Variables by Country
+
+```{r summary_1}
 summary_table <- dt_new %>%
   group_by(cntry) %>%
   summarise(across(
@@ -119,19 +132,18 @@ View(as.data.frame(summary_table))
 
 ```
 
--   Mean political interest highest in Germany and lowest in Slovenia
--   Education years highest in Germany and lowest in Slovenia
--   On the left-right scale, Germany is the leftest and Poland the one the furthest right
--   Satisfaction with democracy highest in Germany and lowest in Slovenia
--   Satisfaction with government highest in Germany and lowest in Poland
--   Immigration attitude towards immigrants highest in Poland and lowest in Slovenia
--   Trust in politicians highest in Germany and lowest in Poland, but very low across all countries
--   Trust in UN highest in Poland and lowest in Slovenia
--   Trust in EU highest in Poland and lowest in Germany, but only very small differences
+-   Mean political interest & Education years are highest in Germany and lowest in Slovenia.
+-   On the left-right scale, Germany is the leftest and Poland the one the furthest right.
+-   Satisfaction with democracy is highest in Germany and lowest in Slovenia.
+-   Satisfaction with government is highest in Germany and lowest in Poland.
+-   Immigration is viewed most positively (highest) in Poland and most negative (lowest) in Slovenia.
+-   Trust in politicians is highest in Germany and lowest in Poland, but very low across all countries.
+-   Trust in UN is highest in Poland and lowest in Slovenia.
+-   Trust in EU is highest in Poland and lowest in Germany, but with only very small differences.
 
 ## Summary Statistics of Trust in EU and Trust in UN by Country
 
-```{r}
+```{r summary_2}
 dt_new %>%
   group_by(cntry) %>%
   summarise(across(
@@ -147,31 +159,67 @@ dt_new %>%
 -   Mean trust in EU is rather similar across all three countries.
 -   Mean trust in UN is the highest in Poland and the lowest in Slovenia.
 
+### Possible line of question: Summary statistics of the variables by age group per country
+
+**Germany "DE"**
+
+```{r summary_3.1}
+
+dt_new %>%
+  filter(cntry=="DE") %>%
+  group_by(age_group) %>%
+  summarise(across(
+    c(trstun, trstep, polintr_rev, eduyrs, lrscale, stfdem, stfgov, imwbcnt, polintr, trstplt),
+    list(mean = ~mean(.x, na.rm = TRUE),
+         median = ~median(.x, na.rm = TRUE),
+         Q5 = ~quantile(.x, 0.05, na.rm = TRUE),
+         Q95 = ~quantile(.x, 0.95, na.rm = TRUE))
+  ))
+```
+
+**Poland "PL"**
+
+```{r summary_3.2}
+dt_new %>%
+  filter(cntry=="PL") %>%
+  group_by(age_group) %>%
+  summarise(across(
+    c(trstun, trstep, polintr_rev, eduyrs, lrscale, stfdem, stfgov, imwbcnt, polintr, trstplt),
+    list(mean = ~mean(.x, na.rm = TRUE),
+         median = ~median(.x, na.rm = TRUE),
+         Q5 = ~quantile(.x, 0.05, na.rm = TRUE),
+         Q95 = ~quantile(.x, 0.95, na.rm = TRUE))
+  ))
+```
+
+**Slovenia "SI"**
+
+```{r summary_3.3}
+dt_new %>%
+  filter(cntry=="PL") %>%
+  group_by(age_group) %>%
+  summarise(across(
+    c(trstun, trstep, polintr_rev, eduyrs, lrscale, stfdem, stfgov, imwbcnt, polintr, trstplt),
+    list(mean = ~mean(.x, na.rm = TRUE),
+         median = ~median(.x, na.rm = TRUE),
+         Q5 = ~quantile(.x, 0.05, na.rm = TRUE),
+         Q95 = ~quantile(.x, 0.95, na.rm = TRUE))
+  ))
+```
+
+-   generally declining trust in both institution with increasing age group
+-   slight differences by age group (see visualization later)
+
 # Visualization
 
-## Trust in EU and UN over Time for all three Countries (Option 1)
+## Trust in EU and UN over Time for all three Countries
 
-```{r}
-dt_new %>%
-  mutate(year = case_when(
-    essround == 1 ~ 2002,
-    essround == 2 ~ 2004,
-    essround == 3 ~ 2006,
-    essround == 4 ~ 2008,
-    essround == 5 ~ 2010,
-    essround == 6 ~ 2012,
-    essround == 7 ~ 2014,
-    essround == 8 ~ 2016,
-    essround == 9 ~ 2018,
-    essround == 10 ~ 2020,
-    essround == 11 ~ 2023,
-    TRUE ~ NA_real_
-  ))
+### Option 1
 
+```{r trst_over_time}
 
-# Summarize mean trust per country and round and assign year
-# Summarize mean trust per country and round AND assign year
-trust_trends <- dt_new %>%
+# Creating a summary dataset "trust_trends" -> Summarize mean trust per country and round and assign year
+trust_trends <- dt_new %>%                      
   filter(cntry %in% c("DE", "PL", "SI")) %>%
   group_by(cntry, essround) %>%
   summarise(
@@ -179,7 +227,7 @@ trust_trends <- dt_new %>%
     trust_UN = mean(trstun, na.rm = TRUE),
     .groups = "drop"
   ) %>%
-  mutate(year = case_when(
+  mutate(year = case_when(    # Mapping ESS round to the year they were conducted in in "year"
     essround == 1 ~ 2002,
     essround == 2 ~ 2004,
     essround == 3 ~ 2006,
@@ -215,17 +263,15 @@ ggplot(trust_long, aes(x = year, y = trust, color = institution, linetype = inst
 
 ```
 
--   Trust in EU is lower than trust in UN across all countries
+-   Trust in EU is lower than trust in UN across all countries.
+-   Mean trust in UN is the highest in Poland.
+-   Slovenia shows the highest fluctuations in mean trust in the EU, with a sharp decline between 2006 and 2014.
 
--   Mean trust in UN is the highest in Poland
+### Option 2
 
--   Slovenia shows the highest fluctuations in mean trust in the EU, with a sharp decline between 2006 and 2014
+**Plot 1 -- Trust in EU over Time**
 
-## Trust in EU and UN over Time for all three Countries (Option 2)
-
-### Plot 1 -- Trust in EU over Time
-
-```{r}
+```{r trstep_over_time}
 
 ggplot(trust_trends, aes(x = year, y = trust_EU, color = cntry)) +
   geom_line(size = 1.2) +
@@ -249,13 +295,13 @@ ggplot(trust_trends, aes(x = year, y = trust_EU, color = cntry)) +
 
 ```
 
--   mean trust in Slovenia peaked in 2006 and was the lowest in 2014
--   mean trust in Poland peaked in 2002 and was the lowest in 2014
--   mean trust in Germany peaked in 2023 and was the lowest in 2010
+-   Mean trust in Slovenia peaked in 2006 and was the lowest in 2014.
+-   Mean trust in Poland peaked in 2002 and was the lowest in 2014.
+-   Mean trust in Germany peaked in 2023 and was the lowest in 2010.
 
 ### Plot 2 -- Trust in UN over Time
 
-```{r}
+```{r trstun_over_time}
 
 ggplot(trust_trends, aes(x = year, y = trust_UN, color = cntry)) +
   geom_line(size = 1.2) +
@@ -278,14 +324,14 @@ ggplot(trust_trends, aes(x = year, y = trust_UN, color = cntry)) +
 
 ```
 
--   mean trust in Slovenia peaked in 2006 and was the lowest in 2010
--   mean trust in Poland peaked in 2018 and was the lowest in 2014
--   mean trust in Germany peaked in 2002 and was the lowest in 2020, fluctuating around a value of 4.8
--   overall, trust is the highest in Poland and lowest in Slovenia
+-   Mean trust in Slovenia peaked in 2006 and was the lowest in 2010.
+-   Mean trust in Poland peaked in 2018 and was the lowest in 2014.
+-   Mean trust in Germany peaked in 2002 and was the lowest in 2020, fluctuating around a value of 4.8.
+-   Overall, trust is the highest in Poland and lowest in Slovenia.
 
 ## Distribution of Age Groups
 
-```{r}
+```{r distr_age_in_cntry}
 
 dt_new %>%
   count(cntry, age_group) %>%
@@ -303,12 +349,12 @@ dt_new %>%
 
 ```
 
--   Among all countries, the age group "65+" has the highest share
--   Age distribution has an upward trend in all three countries, indicating an aging population
+-   Among all countries, the age group "65+" has the highest share.
+-   Age distribution has an upward trend in all three countries, indicating an aging population.
 
 ## Average Trust in EU by Age Group and Country
 
-```{r}
+```{r trstep_by_age_in_cntry}
 dt_new %>%
   group_by(cntry, age_group) %>%
   summarise(mean_trustEU = mean(trstep, na.rm = TRUE), .groups = "drop") %>%
@@ -336,13 +382,13 @@ dt_new %>%
 
 ```
 
--   highest mean trust in EU among people younger than 18 in all three countries, with respondents from Germany having the highest trust
--   general downward trend in meant trust in EU across all countries up to the age group 55-64
--   trust increases again for respondents being 65 or older
+-   Highest mean trust in EU among people younger than 18 in all three countries, with respondents from Germany having the highest trust.
+-   General downward trend in meant trust in EU across all countries up to the age group 55-64.
+-   Trust increases again for respondents being 65 or older.
 
 ## Average Trust in UN by Age Group and Country
 
-```{r}
+```{r trstun_by_age_in_cntry}
 dt_new %>%
   group_by(cntry, age_group) %>%
   summarise(mean_trustUN = mean(trstun, na.rm = TRUE), .groups = "drop") %>%
@@ -369,14 +415,14 @@ dt_new %>%
   theme_minimal()
 ```
 
--   highest mean trust in UN among people younger than 18 in all three countries, with respondents from Germany having the highest trust
--   general downward trend in meant trust in EU in Germany and Slovenia up to the age group 55-64
--   different pattern for Poland: trust decreases until the age group 25-34 and increases again, staying stable for the remaining age groups and being higher than the respective age groups in Germany and Slovenia
--   trust increases again for respondents being 65 or older
+-   Highest mean trust in UN among people younger than 18 in all three countries, with respondents from Germany having the highest trust.
+-   General downward trend in meant trust in EU in Germany and Slovenia up to the age group 55-64.
+-   Different pattern for Poland: trust decreases until the age group 25-34 and increases again, staying stable for the remaining age groups and being higher than the respective age groups in Germany and Slovenia.
+-   Trust increases again for respondents being 65 or older.
 
 ## Average Trust in Politicians by Age Group and Country
 
-```{r}
+```{r trstpol_by_age_in_cntry}
 dt_new %>%
   group_by(cntry, age_group) %>%
   summarise(mean_trustpol = mean(polintr_rev, na.rm = TRUE), .groups = "drop") %>%
@@ -403,12 +449,12 @@ dt_new %>%
   theme_minimal()
 ```
 
-- clearly highest trust in politicians in Germany among all age groups
-- Polish respondents seem to have higher trust than Slovenian respondents in all age group, except for the groups 55-64 and 65+
+-   clearly highest trust in politicians in Germany among all age groups.
+-   Polish respondents seem to have higher trust than Slovenian respondents in all age group, except for the groups 55-64 and 65+.
 
 ## Left-Right Political Placement across Countries
 
-```{r}
+```{r lrscale_in_cntry}
 
 # Filtering to valid left-right scale values
 lr_data <- dt_new %>%
@@ -441,14 +487,13 @@ ggplot(lr_data, aes(x = cntry, y = percentage, fill = factor(lrscale, levels = r
 
 ```
 
-- highest share of respondents selected 5 as their political attitude
-- higher share of respondents in Germany and Slovenia are rather left
-- higher share of respondents in Poland are rather right
+-   Highest share of respondents selected 5 as their political attitude.
+-   Higher share of respondents in Germany and Slovenia are rather left.
+-   Higher share of respondents in Poland are rather right.
 
+## Satisfaction with Democracy by Country
 
-## Satisfaction with Democracy by Country 
-
-```{r}
+```{r stfdem_in_cntry}
 
 ggplot(dt_new, aes(x = cntry, y = stfdem, fill = cntry)) +
   geom_boxplot() +
@@ -465,11 +510,11 @@ ggplot(dt_new, aes(x = cntry, y = stfdem, fill = cntry)) +
 
 ```
 
-- satisfation with democracy highest in Germany and lowest in Slovenia
+-   Satisfaction with democracy highest in Germany and lowest in Slovenia.
 
-## Satisfaction with Government by Country 
+## Satisfaction with Government by Country
 
-```{r}
+```{r stfgov_in_cntry}
 
 ggplot(dt_new, aes(x = cntry, y = stfgov, fill = cntry)) +
   geom_boxplot() +
@@ -494,7 +539,7 @@ ggplot(dt_new, aes(x = cntry, y = stfgov, fill = cntry)) +
 
 ## Education Years per Country
 
-```{r}
+```{r eduyrs_in_cntry}
 ggplot(dt_new, aes(x = cntry, y = eduyrs, fill = cntry)) +
   geom_boxplot() +
   scale_fill_manual(
@@ -510,11 +555,11 @@ ggplot(dt_new, aes(x = cntry, y = eduyrs, fill = cntry)) +
 
 ```
 
-- very high outliers for all three countries, especially for Germany --> maybe check them and delete them?
+-   Very high outliers for all three countries, especially for Germany. --\> maybe check them and delete them?
 
 ## Years of Education by Age Group and Country
 
-```{r}
+```{r eduyrs_by_age_in_cntry}
 dt_new %>%
   group_by(age_group, cntry) %>%
   summarise(mean_eduyrs = mean(eduyrs, na.rm = TRUE), .groups = "drop") %>%
@@ -537,12 +582,12 @@ dt_new %>%
   theme_minimal()
 ```
 
-- graph illustrates differences among age groups across countries
-- Germany has the highest average years of education among all age groups, but important to keep outliers in mind
+-   Graph illustrates differences among age groups across countries.
+-   Germany has the highest average years of education among all age groups, but important to keep outliers in mind.
 
 ## Attitudes towards Immigrants by Age Group and Country
 
-```{r}
+```{r imwbcnt_by_age_in_cntry}
 dt_new %>%
   group_by(age_group, cntry) %>%
   summarise(mean_imwbcnt = mean(imwbcnt, na.rm = TRUE), .groups = "drop") %>%
@@ -565,15 +610,15 @@ dt_new %>%
   theme_minimal()
 ```
 
-- Polish respondents seem to be more welcoming of immigrants among all age groups
-- Slovenian respondents seem to be the least welcoming of immigrants among all age groups
-- this seems to be a contradiction to the distribution of the left-right scale, where a higher share of Polish respondents indicated to be more right, and a higher share of Slovenian respondents indicated to be more left
-- a boxplot in the next step could help to check for outliers
-- reasons??
+-   Polish respondents seem to be more welcoming of immigrants among all age groups.
+-   Slovenian respondents seem to be the least welcoming of immigrants among all age groups.
+-   This seems to be a contradiction to the distribution of the left-right scale, where a higher share of Polish respondents indicated to be more right, and a higher share of Slovenian respondents indicated to be more left.
+-   A boxplot in the next step could help to check for outliers.
+-   Reasons??
 
 ## Immigration Attitude per Country
 
-```{r}
+```{r imwbcnt_in_cntry}
 ggplot(dt_new, aes(x = cntry, y = imwbcnt, fill = cntry)) +
   geom_boxplot() +
   scale_fill_manual(
@@ -588,62 +633,28 @@ ggplot(dt_new, aes(x = cntry, y = imwbcnt, fill = cntry)) +
        y = "Immigration Attitude", x = "Country")
 ```
 
-- there do not seem to be high outliers for immigration attitude among Polish respondents
-- Why are Polish respondents so welcoming when they are rather right? Would be interesting to see if the respondents who are rather right are also more welcoming, or if the average is high because of the very high immigration attitude among rather left respondents
-
+-   There do not seem to be high outliers for immigration attitude among Polish respondents.
+-   Why are Polish respondents so welcoming when they are rather right? Would be interesting to see if the respondents who are rather right are also more welcoming, or if the average is high because of the very high immigration attitude among rather left respondents.
 
 # Models
-## Correlation matrix
-```{r}
-
-# Select relevant variables
-dt_subset <- dt_new %>% select(trstun, trstep, polintr, imwbcnt, lrscale, stfdem, stfgov, eduyrs, trstplt, agea) #I use agea because age_group is a fator variable which I can not use for correlation matrix
-
-# Calculate correlation matrix (pairwise complete cases)
-cor(dt_subset, use = "pairwise.complete.obs")
-
-
-```
-
-## Trust in UN
-
-```{r}
-
-options(scipen = 999) #to get whole numbers in the output
-
-#1. Age group only
-mod1 <- lm(trstep ~ age_group, data = dt_new)
-summary(mod1)
-
-#2. Adding trstplt as control variable
-mod2 <- lm(trstep ~ age_group + trstplt, data = dt_new)
-summary(mod2)
-
-#3. Interaction with trust to see if trust matters more/less by age
-mod3 <- lm(trstep ~ age_group + trstplt + age_group * trstplt , data = dt_new)
-summary(mod3)
-
-#4. adding predictors
-mod4 <- lm(trstep ~ age_group + trstplt + polintr + imwbcnt + lrscale + stfdem + stfgov + eduyrs, data = dt_new)
-summary(mod4)
-
-#5. Full interaction model: adding age*media interaction to see if the effect of news consumption differs by age group
-mod5 <- lm(trstep ~ age_group * (trstplt + polintr + imwbcnt + lrscale + stfdem + stfgov + eduyrs), data = dt_new)
-summary(mod5)
-
-#7. interaction between media*trust to explore whether the impact of trust on political interest depends on media usage patterns.
-mod6 <- lm(polintr_rev ~ age_group + trstplt * (nwspol + netustm + netusoft), data = dt_new)
-summary(mod6)
-
-#8. Fully Saturated Model (all Interactions) but only if we have enough data and want to explore complex interactions
-mod7 <- lm(polintr_rev ~ age_group * (nwspol + netustm + netusoft) +
-                            trstplt * (nwspol + netustm + netusoft), data = dt_raw)
-summary(mod7)
-
-
-
-```
 
 ## Trust in EU
 
-# Implications / Predictions
+### Correalation Matrix
+
+```{r corr_trstep}
+
+options(scipen = 999) #to get whole numbers in the output
+
+# Trust dependent on Age group, divided by country
+mod1_ep_bycntry <- dt_new %>%
+  group_by(cntry) %>%
+  nest() %>%
+  mutate(
+    model = map(data, ~ lm(trstep ~ age_group, data = .x)),
+    summary = map(model, summary)
+  )
+summary(mod1_ep_bycntry)
+```
+
+## Trust in UN
