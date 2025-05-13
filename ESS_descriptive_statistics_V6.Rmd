@@ -638,79 +638,105 @@ ggplot(dt_new, aes(x = cntry, y = imwbcnt, fill = cntry)) +
 
 # Models
 
-## Trust in EU
+## Correlation Matrices
 
-```{r corr_trstep}
+```{r corr_setup, include=FALSE}
 
 options(scipen = 999) #to get whole numbers in the output
+```
 
-# Trust dependent on Age group, divided by country
-mod1_ep_bycntry <- dt_new %>%
+**Germany**
+
+```{r corr_DE}
+dt_new %>%
+  filter(cntry == "DE") %>%
+  select(trstun, trstep, polintr_rev, eduyrs, agea, lrscale, stfdem, stfgov, imwbcnt, trstplt) %>%
+  cor(use = "pairwise.complete.obs")
+```
+
+**Poland**
+
+```{r corr_PL}
+dt_new %>%
+  filter(cntry == "PL") %>%
+  select(trstun, trstep, polintr_rev, eduyrs, agea, lrscale, stfdem, stfgov, imwbcnt, trstplt ) %>%
+  cor(use = "pairwise.complete.obs")
+```
+
+**Slovenia**
+
+```{r corr_SI}
+dt_new %>%
+  filter(cntry == "SI") %>%
+  select(trstun, trstep, polintr_rev, eduyrs, agea, lrscale, stfdem, stfgov, imwbcnt, trstplt) %>%
+  cor(use = "pairwise.complete.obs")
+```
+
+## Trust in EU
+
+### Simple Linear Model
+
+```{r mod_trstep_by_country}
+# Trust in EU by country
+mod_trstep_by_country <- dt_new %>%
+  filter(cntry %in% c("DE", "PL", "SI")) %>%
   group_by(cntry) %>%
   nest() %>%
   mutate(
-    model = map(data, ~ lm(trstep ~ age_group, data = .x)),
+    model = map(data, ~ lm(trstep ~ polintr_rev + eduyrs + age_group + lrscale + stfdem + stfgov + imwbcnt + trstplt, data = .x)),
     summary = map(model, summary)
   )
-summary(mod1_ep_bycntry)
+```
 
-# Trust dependent on all variables, divided by country
-mod2_ep_bycntry <- dt_new %>%
-  group_by(cntry) %>%
-  nest() %>%
-  mutate(
-    model = map(data, ~ lm(trstep ~ age_group + polintr_rev + eduyrs + lrscale + stfdem + stfgov, data = .x)),
-    summary = map(model, summary)
-  )
-summary(mod2_ep_bycntry)
+**Germany**
 
-# Checking multicollinearity?
-library(car)
-model_all <- lm(trstep ~ age_group + polintr_rev + eduyrs + lrscale + stfdem + stfgov, data = dt_new)
-vif(model_all)
+```{r}
+mod_trstep_by_country$summary[[which(mod_trstep_by_country$cntry == "DE")]]
+```
 
-# Visualization
-library(broom)
+**Poland**
 
-mod2_coefs <- mod2_ep_bycntry %>%
-  mutate(tidy = map(model, tidy)) %>%
-  unnest(tidy)
+```{r}
+mod_trstep_by_country$summary[[which(mod_trstep_by_country$cntry == "PL")]]
+```
 
-ggplot(mod2_coefs, aes(x = term, y = estimate, color = cntry)) +
-  geom_point(position = position_dodge(width = 0.5)) +
-  geom_errorbar(aes(ymin = estimate - std.error, ymax = estimate + std.error),
-                width = 0.2, position = position_dodge(width = 0.5)) +
-  coord_flip() +
-  labs(title = "Predictors of Trust in the EU by Country",
-       y = "Coefficient Estimate", x = "")
+**Slovenia**
 
-# Explore interactions
-
+```{r}
+mod_trstep_by_country$summary[[which(mod_trstep_by_country$cntry == "SI")]]
 ```
 
 ## Trust in UN
 
-```{r corr_trstun}
+### Simple Linear Model
 
-options(scipen = 999) #to get whole numbers in the output
-
-# Trust dependent on age group, divided by country
-mod1_un_bycntry <- dt_new %>%
+```{r mod_trstun_by_country}
+# Trust in UN by country
+mod_trstun_by_country <- dt_new %>%
+  filter(cntry %in% c("DE", "PL", "SI")) %>%
   group_by(cntry) %>%
   nest() %>%
   mutate(
-    model = map(data, ~ lm(trstun ~ age_group, data = .x)),
+    model = map(data, ~ lm(trstun ~ polintr_rev + eduyrs + age_group + lrscale + stfdem + stfgov + imwbcnt + trstplt, data = .x)),
     summary = map(model, summary)
   )
-summary(mod1_un_bycntry)
-
-# Trust dependent on all variables, divided by country
-mod2_ep_bycntry <- dt_new %>%
-  group_by(cntry) %>%
-  nest() %>%
-  mutate(
-    model = map(data, ~ lm(trstun ~ age_group + polintr_rev + eduyrs + lrscale + stfdem + stfgov, data = .x)),
-    summary = map(model, summary)
-  )
-summary(mod2_un_bycntry)
 ```
+
+**Germany**
+
+```{r}
+mod_trstun_by_country$summary[[which(mod_trstun_by_country$cntry == "DE")]]
+```
+
+**Poland**
+
+```{r}
+mod_trstun_by_country$summary[[which(mod_trstun_by_country$cntry == "PL")]]
+```
+
+**Slovenia**
+
+```{r}
+mod_trstun_by_country$summary[[which(mod_trstun_by_country$cntry == "SI")]]
+```
+
