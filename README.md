@@ -8,6 +8,16 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 
 -> maybe separate the "General Insights/Descriptives" into the groups mentioned in the research question: political attitudes, ideology, and socio-demographics (kann man so Untertabs erstellen?)
 
+# Notes
+- UN & EU? Or just EU? -> highly correlated but not perfectly, rather focus on EU
+- What drives attitude towards EU? -> lasso regression leaves us with 10 most important; only include ones with not too high correlation; then look at how does this diverge by age group; maybe not trust in politics & in UN; macroeconomic, socio-economic, internet usage, satisfaction/happiness, (trust & satisfaction in government only if we can derive something from it)
+- dividing by age makes sense? yes (if different results) "Difference in driving factors in age groups"
+- education years: binsurize 5%-99% quantile so put value outside the quantile into it (not loosing observation) or remove if not many
+- if 1-10 generally no log if evently distributed, if we see pattern in simple graph, possibly use others
+- for numeric variables (income) log for normal distr. in regressions
+- for age incl. age_squared because increasing then decreasing
+- in dashboard explanation why diff. countries + little bit of macro explanation -> what distinguishes the countries the most?
+
 # Important variables
 
 ### Political competence:
