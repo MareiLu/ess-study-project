@@ -59,6 +59,8 @@ All variables are correct and have data.
 - models
 ![image](https://github.com/user-attachments/assets/c71f68cf-0dd3-43c3-a218-02c36ffb0f7a)
 
+- LASSO Model FIt
+
 # 3. About this Project
 Text about main findings & why these countries
 
