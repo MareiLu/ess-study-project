@@ -1,0 +1,141 @@
+---
+title: "Project Study - Data Presemtation"
+author: "Helena Zappe & Marei Göbelbecker"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r install-packages, eval=FALSE, include=FALSE}
+
+# Download Packages
+
+install.packages(c(
+  "tidyverse",  
+  "skimr",      
+  "psych",      
+  "rmarkdown",  
+  "knitr",      
+  "tinytex",    
+  "labelled",
+  "here"
+  ))
+tinytex::install_tinytex()  
+```
+
+```{r load_packages, include=FALSE}
+
+# Load Packages
+
+library(haven)
+library(tidyverse)   
+library(glmnet)
+library(skimr)       
+library(psych)       
+library(rmarkdown)   
+library(knitr)       
+library(tinytex)     
+library(labelled)
+library(dplyr)
+library(here)
+library(tidyr)
+library(purrr)
+
+```
+
+```{r raw_data, include=FALSE}
+
+# 1. Lade Daten und entferne nicht benötigte Variablen
+dt_all <- read_sav(here("data", "ESS_all.sav")) %>%
+  select(-c(trstun))
+# all binary variables: gndr, badge, bctprd, bghtprd, clsprty, contplt, dntmny, ilglpst, mmbprty, pbldmn, pbldmna, pstplonl, sgnptit, wrkorg, wrkprty, volunfp, donprty, blgetmg, rlgblg, feethngr))
+```
+
+# "What shapes trust in the European Union in Poland, Germany, and Slovenia? A comparative analysis of political attitudes, ideology, and socio-demographics."
+
+# LASSO to find best variables
+
+```{r}
+# Step 1: Preparing Data for Lasso
+# using the gilmnet package
+
+# keep only valid observations in y
+dt_filtered <- dt_all %>% drop_na(trstep)
+
+# filter variables with too many NAs:
+dt_filtered <- dt_filtered %>%
+  select(where(~ !all(is.na(.)))) %>% # 100% NAs
+  select(where(~ mean(is.na(.)) <= 0.8)) %>% # keep variables with less than 80% NAs
+  select(-c(feethngr, loylead, lrnobed, donprty, volunfp, pbldmna, implvdm)) # these variables are not relevant enough for imputation. Also households net income has 79% NAs and is therefore not meaningful.
+
+# checking for missing variables in percent
+dt_filtered %>%
+  summarise(across(everything(), ~ mean(is.na(.)) * 100)) %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "missing_pct") %>%
+  filter(missing_pct > 20) %>%
+  arrange(desc(missing_pct))
+
+# defining the response Variable
+y <- as.numeric(as_factor(dt_filtered$trstep))
+table(y, useNA = "always")
+
+# define the predictor variable matrix
+x_data <- dt_filtered %>%
+  select(-trstep) %>%
+  zap_labels() %>%  # delete all labels
+  mutate(across(where(is.factor), ~ as.numeric(as.character(.)))) # define all factor variables also as numeric
+
+x_data[is.na(x_data)] <- 0  # replaces all NA in x_data
+
+# define the matrix of response variables
+x <- data.matrix(x_data)
+
+# LASSO with Crossvalidation
+lasso_cv <- cv.glmnet(x, y, alpha = 1)
+```
+
+Fitting the LASSO model:
+
+The bigger lambda, the more coefficients will be set to 0 for variable selection.
+
+best_lambda (lambda.min) gives the most precise model:
+
+```{r}
+# Find best Lambda
+best_lambda <- lasso_cv$lambda.min
+
+# Final LASSO Model
+lasso_model <- glmnet(x, y, alpha = 1, lambda = best_lambda)
+
+# Lambda Precise: 0.00067 
+
+```
+
+lambda.1se gives the more robust, more economic (sparsamere) model:
+(Oft besser generalisierbar)
+
+```{r}
+lambda_1se <- lasso_cv$lambda.1se
+
+model_robust <- glmnet(x, y, alpha = 1, lambda = lasso_cv$lambda.1se)
+
+# Lambda Robust: 0.00992
+
+```
+
+Chatty: 
+"In der LASSO-Analyse wurde mit lambda.min = 0.00067 das Modell mit der höchsten Vorhersagegenauigkeit identifiziert. Dieses Modell verwendet relativ viele Prädiktoren.
+
+Alternativ wurde mit lambda.1se = 0.00992 ein robusteres Modell berechnet, das sparsamer ist und potenziell besser generalisiert. Hier bleiben nur die wichtigsten Prädiktoren erhalten.
+
+Je nach Forschungsziel (Präzision vs. Interpretierbarkeit) kann eines der beiden Modelle bevorzugt werden."
+
+
+
+
+
+
+
