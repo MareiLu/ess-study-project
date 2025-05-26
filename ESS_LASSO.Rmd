@@ -50,8 +50,7 @@ library(purrr)
 
 # 1. Lade Daten und entferne nicht benötigte Variablen
 dt_all <- read_sav(here("data", "ESS_all.sav")) %>%
-  select(-c(trstun))
-# all binary variables: gndr, badge, bctprd, bghtprd, clsprty, contplt, dntmny, ilglpst, mmbprty, pbldmn, pbldmna, pstplonl, sgnptit, wrkorg, wrkprty, volunfp, donprty, blgetmg, rlgblg, feethngr))
+  select(-c(trstun, edition))
 ```
 
 # "What shapes trust in the European Union in Poland, Germany, and Slovenia? A comparative analysis of political attitudes, ideology, and socio-demographics."
@@ -97,11 +96,11 @@ x <- data.matrix(x_data)
 lasso_cv <- cv.glmnet(x, y, alpha = 1)
 ```
 
-Fitting the LASSO model:
+## Fitting the LASSO model:
 
 The bigger lambda, the more coefficients will be set to 0 for variable selection.
 
-best_lambda (lambda.min) gives the most precise model:
+**best_lambda** (lambda.min) gives the most precise model:
 
 ```{r}
 # Find best Lambda
@@ -112,10 +111,17 @@ lasso_model <- glmnet(x, y, alpha = 1, lambda = best_lambda)
 
 # Lambda Precise: 0.00067 
 
+# Extracting the Coefficients
+coef_lasso <- coef(lasso_model)
+
+selected_vars <- rownames(coef_lasso)[which(coef_lasso[, 1] != 0)]
+selected_vars <- selected_vars[selected_vars != "(Intercept)"]
+
+print(selected_vars)
+
 ```
 
-lambda.1se gives the more robust, more economic (sparsamere) model:
-(Oft besser generalisierbar)
+**lambda.1se** gives the more robust, more economic (sparsamere) model: (Oft besser generalisierbar)
 
 ```{r}
 lambda_1se <- lasso_cv$lambda.1se
@@ -124,15 +130,94 @@ model_robust <- glmnet(x, y, alpha = 1, lambda = lasso_cv$lambda.1se)
 
 # Lambda Robust: 0.00992
 
+# Extracting the Coefficients
+coef_robust <- coef(model_robust)
+
+vars_robust <- rownames(coef_robust)[which(coef_robust[, 1] != 0)]
+vars_robust <- vars_robust[vars_robust != "(Intercept)"]
+
+print(vars_robust)
+
 ```
 
-Chatty: 
-"In der LASSO-Analyse wurde mit lambda.min = 0.00067 das Modell mit der höchsten Vorhersagegenauigkeit identifiziert. Dieses Modell verwendet relativ viele Prädiktoren.
+Chatty: "In der LASSO-Analyse wurde mit lambda.min = 0.00067 das Modell mit der höchsten Vorhersagegenauigkeit identifiziert. Dieses Modell verwendet relativ viele Prädiktoren.
 
 Alternativ wurde mit lambda.1se = 0.00992 ein robusteres Modell berechnet, das sparsamer ist und potenziell besser generalisiert. Hier bleiben nur die wichtigsten Prädiktoren erhalten.
 
 Je nach Forschungsziel (Präzision vs. Interpretierbarkeit) kann eines der beiden Modelle bevorzugt werden."
 
+## Model Specific Coefficients:
+
+```{r}
+
+# Vergleich
+setdiff(selected_vars, vars_robust)  # Variablen nur im präzisen Modell
+setdiff(vars_robust, selected_vars)  # Variablen nur im sparsamen Modell
+
+```
+
+```{r}
+plot(lasso_cv)
+abline(v = log(lasso_cv$lambda.min), col = "blue", lty = 2)
+abline(v = log(lasso_cv$lambda.1se), col = "red", lty = 2)
+legend("topright", legend = c("lambda.min", "lambda.1se"),
+       col = c("blue", "red"), lty = 2)
+title("Cross-Validation: MSE über Lambda")
+```
+
+Chatty: - lambda.min (links) ergibt den niedrigsten mittleren Fehler – aber nutzt mehr Prädiktoren - lambda.1se (weiter rechts) hat leicht höheren Fehler, ist aber viel sparsamer Der Plot zeigt schön, dass der Fehler in einem sehr flachen Bereich minimal ist → daher kannst du das robustere, sparsamere Modell (lambda.1se) gut vertreten.
+
+-\> Wir verwenden also die Variablen vom 2. Modell
+
+### Neues Datenset lambda.1se
+
+```{r}
+dt_lasso_selected <- dt_filtered %>% select(all_of(vars_robust), trstep)
+# insg. 54 variables, therefore not really interpretable
+```
+
+## Alternative: Interpretierbareres Modell mit max x Variablen
+
+```{r}
+
+lasso_model_max <- glmnet(x, y, alpha = 1, dfmax = 12)
+
+# Extracting the Coefficients
+coef_lasso <- coef(lasso_model_max)
+
+# Anzahl ≠ 0-Koeffizienten je Lambda (inkl. Intercept)
+nonzero <- lasso_model_max$df
+lambda_index <- which(nonzero == 12)[1]  # 5 Prädiktoren + 1 Intercept
+
+# Wenn gefunden:
+if (!is.na(lambda_index)) {
+  lambda_max <- lasso_model_max$lambda[lambda_index]
+  coef_max <- coef(lasso_model_max, s = lambda_max)
+  vars_max <- rownames(coef_max)[which(coef_max[, 1] != 0)]
+  vars_max <- vars_max[vars_max != "(Intercept)"]
+  print(vars_max)
+} else {
+  message("Kein Lambda mit genau x Prädiktoren gefunden.")
+}
+
+
+```
+
+### Cutoff ausprobieren:
+
+-   Kein Lambda für 10 vars + intercept
+-   lambda = 0.21370; "essround" "cntry" "euftf" "mmbprty" "stfedu" "trstlgl" "trstplt" "trstprl" "trstprt" "imueclt" "imwbcnt" "agea" -\> 11 vars + intercept
+-   lambda = 0.25740; "cntry" "euftf" "stfedu" "trstlgl" "trstplt" "trstprl" "trstprt" "imueclt" "imwbcnt" "agea" -\> 9 vars + intercept
+-   lambda = 0.28249; "cntry" "euftf" "stfedu" "trstlgl" "trstplt" "trstprl" "trstprt" "imueclt" "imwbcnt" -\> 8 vars + intercept
+-   lambda = 0.31004; "euftf" "stfedu" "trstlgl" "trstplt" "trstprl" "trstprt" "imueclt" "imwbcnt" -\> 7 vars + intercept
+-   Kein Lambda für 6 vars + intercept
+-   lambda = 0.34027; "trstlgl" "trstplt" "trstprl" "trstprt" "imueclt" "imwbcnt" -\> 5 vars + intercept
+
+Note: combinung imueclt & imwbcnt
+
+Note: try if confounder & if trust index?
+
+Je geringer lambda, desto genauer passt das Model.
 
 
 
