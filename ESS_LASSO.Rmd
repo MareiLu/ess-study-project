@@ -1,5 +1,5 @@
 ---
-title: "Project Study - Data Presemtation"
+title: "Project Study - LASSO Variable Selection"
 author: "Helena Zappe & Marei Göbelbecker"
 date: "`r Sys.Date()`"
 output: html_document
