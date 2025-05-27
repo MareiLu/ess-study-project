@@ -1,6 +1,13 @@
 # Research Questions
 What shapes trust in the European Union and United Nations in Poland, Germany and Slovenia? A comparative Analysis of political attitudes, ideology and socio-demographics?
 
+# Datasets
+1. Downloaded data named ESS_all
+2. Data Preparation -> Save data set as ESS_prepared
+3. Lasso -> save data set as ESS_lasso
+4. descriptive statistics on ESS_lasso
+5. Models on ESS_lasso
+   
 # Dashboard 
 "About this Project", "General Insights/Descriptives", "General Findings", eventually "Implications/Predictions"
 -> 10min per person presentation, so don't do it more complicated than can be presented in 20min
