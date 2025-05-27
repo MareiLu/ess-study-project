@@ -50,7 +50,22 @@ library(purrr)
 
 # 1. Lade Daten und entferne nicht benötigte Variablen
 dt_all <- read_sav(here("data", "ESS_all.sav")) %>%
-  select(-c(trstun, edition))
+  select(-c(trstun))
+```
+
+```{r}
+# winsurize education years to get rid of outliers
+# Calculate thresholds
+q_lower <- quantile(dt_all$eduyrs, 0.05, na.rm = TRUE)
+q_upper <- quantile(dt_all$eduyrs, 0.99, na.rm = TRUE)
+
+# Winsorize: replace values outside bounds
+dt_all <- dt_all %>%
+  mutate(eduyrs_winsor = case_when(
+    eduyrs < q_lower ~ q_lower,
+    eduyrs > q_upper ~ q_upper,
+    TRUE ~ eduyrs
+  ))
 ```
 
 # "What shapes trust in the European Union in Poland, Germany, and Slovenia? A comparative analysis of political attitudes, ideology, and socio-demographics."
@@ -60,22 +75,26 @@ dt_all <- read_sav(here("data", "ESS_all.sav")) %>%
 ```{r}
 # Step 1: Preparing Data for Lasso
 # using the gilmnet package
-
-# keep only valid observations in y
-dt_filtered <- dt_all %>% drop_na(trstep)
+  
 
 # filter variables with too many NAs:
-dt_filtered <- dt_filtered %>%
+dt_filtered <- dt_all %>%
+  drop_na(trstep) %>% # keep only valid observations in y
   select(where(~ !all(is.na(.)))) %>% # 100% NAs
   select(where(~ mean(is.na(.)) <= 0.8)) %>% # keep variables with less than 80% NAs
-  select(-c(feethngr, loylead, lrnobed, donprty, volunfp, pbldmna, implvdm)) # these variables are not relevant enough for imputation. Also households net income has 79% NAs and is therefore not meaningful.
+  select(-c(feethngr, loylead, lrnobed, donprty, volunfp, pbldmna, implvdm)) %>% # these variables are not relevant enough for imputation. Also households net income has 79% NAs and is therefore not meaningful. 
+  select(-c(idno, proddate, bctprd, wrkorg, stratum, edition)) # Other variables that are not relevant for interpretation
 
 # checking for missing variables in percent
 dt_filtered %>%
   summarise(across(everything(), ~ mean(is.na(.)) * 100)) %>%
   pivot_longer(everything(), names_to = "variable", values_to = "missing_pct") %>%
   filter(missing_pct > 20) %>%
-  arrange(desc(missing_pct))
+  arrange(missing_pct)
+
+# accounting for differences in country size and selection
+dt_filtered <- dt_filtered %>% drop_na(anweight) # dropping all obs where anweight is NA
+weights <- dt_filtered$anweight # establishing the weighting
 
 # defining the response Variable
 y <- as.numeric(as_factor(dt_filtered$trstep))
@@ -83,7 +102,7 @@ table(y, useNA = "always")
 
 # define the predictor variable matrix
 x_data <- dt_filtered %>%
-  select(-trstep) %>%
+  select(-c(trstep, anweight, pspwght, dweight, pweight, prob)) %>%
   zap_labels() %>%  # delete all labels
   mutate(across(where(is.factor), ~ as.numeric(as.character(.)))) # define all factor variables also as numeric
 
@@ -92,135 +111,7 @@ x_data[is.na(x_data)] <- 0  # replaces all NA in x_data
 # define the matrix of response variables
 x <- data.matrix(x_data)
 
-# LASSO with Crossvalidation
-lasso_cv <- cv.glmnet(x, y, alpha = 1)
-```
-
-## Fitting the LASSO model:
-
-The bigger lambda, the more coefficients will be set to 0 for variable selection.
-
-**best_lambda** (lambda.min) gives the most precise model:
-
-```{r}
-# Find best Lambda
-best_lambda <- lasso_cv$lambda.min
-
-# Final LASSO Model
-lasso_model <- glmnet(x, y, alpha = 1, lambda = best_lambda)
-
-# Lambda Precise: 0.00067 
-
-# Extracting the Coefficients
-coef_lasso <- coef(lasso_model)
-
-selected_vars <- rownames(coef_lasso)[which(coef_lasso[, 1] != 0)]
-selected_vars <- selected_vars[selected_vars != "(Intercept)"]
-
-print(selected_vars)
+# LASSO with Crossvalidation and weighting
+lasso_cv <- cv.glmnet(x, y, alpha = 1, weights = weights)
 
 ```
-
-**lambda.1se** gives the more robust, more economic (sparsamere) model: (Oft besser generalisierbar)
-
-```{r}
-lambda_1se <- lasso_cv$lambda.1se
-
-model_robust <- glmnet(x, y, alpha = 1, lambda = lasso_cv$lambda.1se)
-
-# Lambda Robust: 0.00992
-
-# Extracting the Coefficients
-coef_robust <- coef(model_robust)
-
-vars_robust <- rownames(coef_robust)[which(coef_robust[, 1] != 0)]
-vars_robust <- vars_robust[vars_robust != "(Intercept)"]
-
-print(vars_robust)
-
-```
-
-Chatty: "In der LASSO-Analyse wurde mit lambda.min = 0.00067 das Modell mit der höchsten Vorhersagegenauigkeit identifiziert. Dieses Modell verwendet relativ viele Prädiktoren.
-
-Alternativ wurde mit lambda.1se = 0.00992 ein robusteres Modell berechnet, das sparsamer ist und potenziell besser generalisiert. Hier bleiben nur die wichtigsten Prädiktoren erhalten.
-
-Je nach Forschungsziel (Präzision vs. Interpretierbarkeit) kann eines der beiden Modelle bevorzugt werden."
-
-## Model Specific Coefficients:
-
-```{r}
-
-# Vergleich
-setdiff(selected_vars, vars_robust)  # Variablen nur im präzisen Modell
-setdiff(vars_robust, selected_vars)  # Variablen nur im sparsamen Modell
-
-```
-
-```{r}
-plot(lasso_cv)
-abline(v = log(lasso_cv$lambda.min), col = "blue", lty = 2)
-abline(v = log(lasso_cv$lambda.1se), col = "red", lty = 2)
-legend("topright", legend = c("lambda.min", "lambda.1se"),
-       col = c("blue", "red"), lty = 2)
-title("Cross-Validation: MSE über Lambda")
-```
-
-Chatty: - lambda.min (links) ergibt den niedrigsten mittleren Fehler – aber nutzt mehr Prädiktoren - lambda.1se (weiter rechts) hat leicht höheren Fehler, ist aber viel sparsamer Der Plot zeigt schön, dass der Fehler in einem sehr flachen Bereich minimal ist → daher kannst du das robustere, sparsamere Modell (lambda.1se) gut vertreten.
-
--\> Wir verwenden also die Variablen vom 2. Modell
-
-### Neues Datenset lambda.1se
-
-```{r}
-dt_lasso_selected <- dt_filtered %>% select(all_of(vars_robust), trstep)
-# insg. 54 variables, therefore not really interpretable
-```
-
-## Alternative: Interpretierbareres Modell mit max x Variablen
-
-```{r}
-
-lasso_model_max <- glmnet(x, y, alpha = 1, dfmax = 12)
-
-# Extracting the Coefficients
-coef_lasso <- coef(lasso_model_max)
-
-# Anzahl ≠ 0-Koeffizienten je Lambda (inkl. Intercept)
-nonzero <- lasso_model_max$df
-lambda_index <- which(nonzero == 12)[1]  # 5 Prädiktoren + 1 Intercept
-
-# Wenn gefunden:
-if (!is.na(lambda_index)) {
-  lambda_max <- lasso_model_max$lambda[lambda_index]
-  coef_max <- coef(lasso_model_max, s = lambda_max)
-  vars_max <- rownames(coef_max)[which(coef_max[, 1] != 0)]
-  vars_max <- vars_max[vars_max != "(Intercept)"]
-  print(vars_max)
-} else {
-  message("Kein Lambda mit genau x Prädiktoren gefunden.")
-}
-
-
-```
-
-### Cutoff ausprobieren:
-
--   Kein Lambda für 10 vars + intercept
--   lambda = 0.21370; "essround" "cntry" "euftf" "mmbprty" "stfedu" "trstlgl" "trstplt" "trstprl" "trstprt" "imueclt" "imwbcnt" "agea" -\> 11 vars + intercept
--   lambda = 0.25740; "cntry" "euftf" "stfedu" "trstlgl" "trstplt" "trstprl" "trstprt" "imueclt" "imwbcnt" "agea" -\> 9 vars + intercept
--   lambda = 0.28249; "cntry" "euftf" "stfedu" "trstlgl" "trstplt" "trstprl" "trstprt" "imueclt" "imwbcnt" -\> 8 vars + intercept
--   lambda = 0.31004; "euftf" "stfedu" "trstlgl" "trstplt" "trstprl" "trstprt" "imueclt" "imwbcnt" -\> 7 vars + intercept
--   Kein Lambda für 6 vars + intercept
--   lambda = 0.34027; "trstlgl" "trstplt" "trstprl" "trstprt" "imueclt" "imwbcnt" -\> 5 vars + intercept
-
-Note: combinung imueclt & imwbcnt
-
-Note: try if confounder & if trust index?
-
-Je geringer lambda, desto genauer passt das Model.
-
-
-
-
-
-
