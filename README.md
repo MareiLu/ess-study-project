@@ -7,6 +7,7 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 3. Lasso -> save data set as ESS_lasso
 4. descriptive statistics on ESS_lasso
 5. Models on ESS_lasso
+6. App on ESS_lasso
    
 # Dashboard 
 "About this Project", "General Insights/Descriptives", "General Findings", eventually "Implications/Predictions"
