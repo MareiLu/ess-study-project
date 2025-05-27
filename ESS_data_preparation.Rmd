@@ -1,0 +1,111 @@
+---
+title: "Data Preparation"
+author: "Marei Göbelbecker & Helena Zappe"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r install-packages, eval=FALSE, include=FALSE}
+
+# Download Packages
+
+install.packages(c(
+  "tidyverse",  
+  "skimr",      
+  "psych",      
+  "rmarkdown",  
+  "knitr",      
+  "labelled",
+  "here"
+  ))
+```
+
+```{r load_packages, include=FALSE}
+
+# Load Packages
+
+library(haven)
+library(tidyverse)   
+library(skimr)       
+library(psych)       
+library(rmarkdown)   
+library(knitr)       
+library(labelled)
+library(dplyr)
+library(here)
+library(tidyr)
+
+```
+
+```{r raw_data, include=FALSE}
+
+dt_raw <- read_sav(here("data","ESS_all.sav"))
+
+```
+
+*`"What factors shapes trust in the European Union in Poland, Germany, and Slovenia? A comparative analysis of political attitudes, ideology, and socio-demographics."`*
+
+# Data Wrangling
+
+-   filtering to our countries
+-   recoding age group
+-   reversing the scale for polintr (higher number = more interested)
+-   winsurizing education years to get rid of outliers
+
+```{r data_preparation}
+
+dt_new <- dt_raw %>%
+  filter(cntry %in% c("DE", "PL", "SI")) %>%  
+  mutate(
+    age_group = case_when(
+      agea < 18 ~ "<18",                      
+      agea >=18 & agea <= 24 ~ "18-24",
+      agea > 24 & agea <= 34 ~ "25-34",
+      agea > 34 & agea <= 44 ~ "35-44",
+      agea > 44 & agea <= 54 ~ "45–54",
+      agea > 54 & agea <= 64 ~ "55-64",
+      agea > 64 ~ "65+"
+    ))  %>%                                   
+  mutate(
+    age_group = factor(age_group, levels = c("<18", "18-24", "25-34", "35-44", "45–54", "55-64", "65+")),
+    polintr_rev = 5 - polintr  # higher = more interested               
+    ) %>%
+  mutate(year = case_when(    # Mapping ESS round to the year they were conducted in in "year"
+    essround == 1 ~ 2002,
+    essround == 2 ~ 2004,
+    essround == 3 ~ 2006,
+    essround == 4 ~ 2008,
+    essround == 5 ~ 2010,
+    essround == 6 ~ 2012,
+    essround == 7 ~ 2014,
+    essround == 8 ~ 2016,
+    essround == 9 ~ 2018,
+    essround == 10 ~ 2020,
+    essround == 11 ~ 2022,
+    TRUE ~ NA_real_
+  ))
+```
+
+```{r}
+# winsurize education years to get rid of outliers
+# Calculate thresholds
+q_lower <- quantile(dt_new$eduyrs, 0.05, na.rm = TRUE)
+q_upper <- quantile(dt_new$eduyrs, 0.99, na.rm = TRUE)
+
+# Winsorize: replace values outside bounds
+dt_new <- dt_new %>%
+  mutate(eduyrs_winsor = case_when(
+    eduyrs < q_lower ~ q_lower,
+    eduyrs > q_upper ~ q_upper,
+    TRUE ~ eduyrs
+  ))
+```
+
+```{r}
+# Saving Data as new Dataset for Lasso
+write_sav(dt_new, here("data", "ESS_prepared.sav"))
+```
