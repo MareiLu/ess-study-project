@@ -1,5 +1,5 @@
 ---
-title: "Project Study - LASSO Variable Selection"
+title: "Project Study - LASSO variable selection"
 author: "Helena Zappe & Marei Göbelbecker"
 date: "`r Sys.Date()`"
 output: html_document
@@ -49,26 +49,12 @@ library(purrr)
 ```{r raw_data, include=FALSE}
 
 # 1. Lade Daten und entferne nicht benötigte Variablen
-dt_all <- read_sav(here("data", "ESS_all.sav")) %>%
+dt_all <- read_sav(here("data", "ESS_prepared.sav")) %>%
   select(-c(trstun))
 ```
 
-```{r}
-# winsurize education years to get rid of outliers
-# Calculate thresholds
-q_lower <- quantile(dt_all$eduyrs, 0.05, na.rm = TRUE)
-q_upper <- quantile(dt_all$eduyrs, 0.99, na.rm = TRUE)
 
-# Winsorize: replace values outside bounds
-dt_all <- dt_all %>%
-  mutate(eduyrs_winsor = case_when(
-    eduyrs < q_lower ~ q_lower,
-    eduyrs > q_upper ~ q_upper,
-    TRUE ~ eduyrs
-  ))
-```
-
-# "What shapes trust in the European Union in Poland, Germany, and Slovenia? A comparative analysis of political attitudes, ideology, and socio-demographics."
+*`"What shapes trust in the European Union in Poland, Germany, and Slovenia? A comparative analysis of political attitudes, ideology, and socio-demographics."`*
 
 # LASSO to find best variables
 
@@ -113,5 +99,113 @@ x <- data.matrix(x_data)
 
 # LASSO with Crossvalidation and weighting
 lasso_cv <- cv.glmnet(x, y, alpha = 1, weights = weights)
+
+```
+
+## Fitting the LASSO model:
+
+The bigger lambda, the more coefficients will be set to 0 for variable selection.
+
+**best_lambda** (lambda.min) gives the most precise model:
+
+```{r}
+# Find best Lambda
+best_lambda <- lasso_cv$lambda.min
+
+# Final LASSO Model
+lasso_model <- glmnet(x, y, alpha = 1, lambda = best_lambda)
+
+# Lambda Precise: 0.00127
+
+# Extracting the Coefficients
+coef_lasso <- coef(lasso_model)
+
+selected_vars <- rownames(coef_lasso)[which(coef_lasso[, 1] != 0)]
+selected_vars <- selected_vars[selected_vars != "(Intercept)"]
+
+print(selected_vars)
+
+```
+
+**lambda.1se** gives the more robust, more economic (sparsamere) model: (Oft besser generalisierbar)
+
+```{r}
+lambda_1se <- lasso_cv$lambda.1se
+
+model_robust <- glmnet(x, y, alpha = 1, lambda = lasso_cv$lambda.1se)
+
+# Lambda Robust: 0.01308
+
+# Extracting the Coefficients
+coef_robust <- coef(model_robust)
+
+vars_robust <- rownames(coef_robust)[which(coef_robust[, 1] != 0)]
+vars_robust <- vars_robust[vars_robust != "(Intercept)"]
+
+print(vars_robust)
+
+```
+
+Chatty: "In der LASSO-Analyse wurde mit lambda.min = 0.00140 das Modell mit der höchsten Vorhersagegenauigkeit identifiziert. Dieses Modell verwendet relativ viele Prädiktoren.
+
+Alternativ wurde mit lambda.1se = 0.01575 ein robusteres Modell berechnet, das sparsamer ist und potenziell besser generalisiert. Hier bleiben nur die wichtigsten Prädiktoren erhalten.
+
+Je nach Forschungsziel (Präzision vs. Interpretierbarkeit) kann eines der beiden Modelle bevorzugt werden."
+
+## Model Specific Coefficients:
+
+```{r}
+
+# Vergleich
+setdiff(selected_vars, vars_robust)  # Variablen nur im präzisen Modell
+setdiff(vars_robust, selected_vars)  # Variablen nur im sparsamen Modell
+
+```
+
+```{r}
+plot(lasso_cv)
+abline(v = log(lasso_cv$lambda.min), col = "blue", lty = 3)
+abline(v = log(lasso_cv$lambda.1se), col = "red", lty = 3)
+abline(v = log(lambda_max), col = "green", lty = 3)
+legend("topright", legend = c("lambda.min", "lambda.1se", "lambda_max"),
+       col = c("blue", "red", "green"), lty = 3)
+title("Cross-Validation: MSE über Lambda")
+```
+
+Chatty: - lambda.min (links) ergibt den niedrigsten mittleren Fehler – aber nutzt mehr Prädiktoren - lambda.1se (weiter rechts) hat leicht höheren Fehler, ist aber viel sparsamer Der Plot zeigt schön, dass der Fehler in einem sehr flachen Bereich minimal ist → daher kannst du das robustere, sparsamere Modell (lambda.1se) gut vertreten.
+
+-\> Wir verwenden also die Variablen vom 2. Modell oder grenzen es weiter manuell ein.
+
+### Neues Datenset lambda_max
+
+```{r}
+# dt_lasso_selected <- dt_filtered %>% select(all_of(vars_robust), trstep)
+# insg. 76 variables
+```
+
+## Alternative: Interpretierbareres Modell mit max x Variablen
+
+```{r}
+
+lasso_model_max <- glmnet(x, y, alpha = 1, dfmax = 19)
+
+# Extracting the Coefficients
+coef_lasso <- coef(lasso_model_max)
+
+# Anzahl ≠ 0-Koeffizienten je Lambda (inkl. Intercept)
+nonzero <- lasso_model_max$df
+lambda_index <- which(nonzero == 19)[1]  # x Prädiktoren + 1 Intercept
+
+# Wenn gefunden:
+if (!is.na(lambda_index)) {
+  lambda_max <- lasso_model_max$lambda[lambda_index]
+  coef_max <- coef(lasso_model_max, s = lambda_max)
+  vars_max <- rownames(coef_max)[which(coef_max[, 1] != 0)]
+  vars_max <- vars_max[vars_max != "(Intercept)"]
+  print(vars_max)
+} else {
+  message("Kein Lambda mit genau x Prädiktoren gefunden.")
+}
+
 
 ```
