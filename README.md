@@ -6,11 +6,13 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 - Text für die About this Project Seite mit Erklärung Länderauswahl & Hypothesen
 - App Grundstruktur
 - ⁠Layout überlegen für die einzelnen Pages
+
 *Vor den Models*
 - Bei allen Variablen Aussagekraft checken -> NAs & Outlier
 - Evtl. Trust Index oder einzelne Löschen
 - Evtl. Immigration Index
 - Nochmal Lasso refinen (evtl ausweiten, aber mehr irrelevante vars löschen) -> ich würde das nochmal mit dem Dude abklären
+
 *Für die Models*
 - Verteilung checken für Form in der Regression (e.g. Log, U-shape)
 
