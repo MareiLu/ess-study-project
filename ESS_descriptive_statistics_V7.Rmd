@@ -81,7 +81,57 @@ Observations 65,237 Most Outliers: hmsacld 38,583; mmbprty 38,319; atcherp 38,40
 
 -   **trstep**: Trust in EU
 
-```{r}
+```{r trstep_over_time}
+
+# Scale Prep
+trstep_grouped <- dt_new %>%                      
+  group_by(cntry, essround) %>%
+  summarise(
+    trust_EU = mean(trstep, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(year = case_when(    # Mapping ESS round to the year they were conducted in in "year"
+    essround == 1 ~ 2002,
+    essround == 2 ~ 2004,
+    essround == 3 ~ 2006,
+    essround == 4 ~ 2008,
+    essround == 5 ~ 2010,
+    essround == 6 ~ 2012,
+    essround == 7 ~ 2014,
+    essround == 8 ~ 2016,
+    essround == 9 ~ 2018,
+    essround == 10 ~ 2020,
+    essround == 11 ~ 2022,
+    TRUE ~ NA_real_
+  ))
+
+#Reshaping to long format for plotting
+trust_long <- trstep_grouped %>%
+  pivot_longer(cols = c(trust_EU),
+               names_to = "institution",
+               values_to = "trust")
+
+# Line Plot divided by years
+ggplot(trstep_grouped, aes(x = year, y = trust_EU, color = cntry)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  scale_color_manual(
+    values = c(
+      "DE" = "#33658a",  # Germany
+      "PL" = "#f6ae2d",  # Poland
+      "SI" = "#f26419"   # Slovenia
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(
+    title = "Trust in the EU Over Time",
+    x = "Year",
+    y = "Mean Trust in EU",
+    color = "Country"
+  ) +
+  theme_minimal()
+
+# Summary Statistic across all years
 dt_new %>%
   group_by(cntry) %>%
   summarise(across(trstep,
@@ -91,18 +141,13 @@ dt_new %>%
          Q95 = ~quantile(.x, 0.95, na.rm = TRUE))
   ))
 
-ggplot(dt_new, aes(x = cntry, y = trstep, fill = cntry)) +
-  geom_boxplot() +
-  labs(
-    title = "Distribution of trstep by Country",
-    x = "Country",
-    y = "trstep (Trust in European Union)"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "none")
 ```
 
-Mean Trust in EU is very similar between all countries (around 4.2). People in Germany are generally distributed closer around the mean.
+-   Mean trust in Slovenia peaked in 2006 and was the lowest in 2014.
+-   Mean trust in Poland peaked in 2002 and was the lowest in 2014.
+-   Mean trust in Germany peaked in 2023 and was the lowest in 2010.
+
+**Plot 1 -- Trust in EU over Time**
 
 ## Political Attitudes
 
@@ -203,25 +248,41 @@ ggplot(dt_long, aes(x = variable, y = trust, fill = cntry)) +
   )
 ```
 
-*Ich glaube Trust in Police kann man löschen.* *Generell finde ich die Übersicht eigentlich ganz schön auf dem Dashboard falls wir diese predictors verwenden.*
+*Ich glaube Trust in Police, in Political Parties und das Legal System kann man löschen.* 
 
 ## Ideology
 
+-   **atcherp**: How emotionally attached to Europe
+
 -   **hmsacld**: Gay and lesbian couples right to adopt children
 
--   **stfedu**: State of education in country nowadays
-
 -   **impcntr**: Allow many/few immigrants from poorer countries outside Europe
+
+```{r}
+dt_new %>%
+  group_by(cntry) %>%
+  summarise(across(impcntr,
+    list(mean = ~mean(.x, na.rm = TRUE),
+         median = ~median(.x, na.rm = TRUE),
+         Q5 = ~quantile(.x, 0.05, na.rm = TRUE),
+         Q95 = ~quantile(.x, 0.95, na.rm = TRUE))
+  ))
+
+# 1 - Allow many to come and live here
+# 4 - Allow none
+```
 
 -   **imueclt**: Country's cultural life undermined or enriched by immigrants
 
 -   **imwbcnt**: Immigrants make country worse or better place to live
 
--   **atcherp**: How emotionally attached to Europe
+
 
 ## Socio-Demographics
 
 -   **rlgatnd**: How often attend religious services apart from special occasions
+
+-   **stfedu**: State of education in country nowadays
 
 ## Mediators
 
@@ -233,7 +294,96 @@ ggplot(dt_long, aes(x = variable, y = trust, fill = cntry)) +
 
 -   **age_group**
 
+```{r distr_age_in_cntry}
+
+dt_new %>%
+  count(cntry, age_group) %>%
+  group_by(cntry) %>%
+  mutate(prop = n / sum(n) * 100) %>%
+  ggplot(aes(x = cntry, y = prop, fill = age_group)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Relative Distribution of Age Groups by Country",
+    x = "Country",
+    y = "Proportion of Respondents",
+    fill = "Age Group"
+  ) +
+  theme_minimal()
+
+```
+
+-   Among all countries, the age group "65+" has the highest share.
+-   Age distribution has an upward trend in all three countries, indicating an aging population.
+
 -   **year**
+
+## Variables across years and countries
+
+- **Average Trust in EU by Age Group and Country**
+
+```{r trstep_by_age_in_cntry}
+dt_new %>%
+  group_by(cntry, age_group) %>%
+  summarise(mean_trustEU = mean(trstep, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = age_group, y = mean_trustEU, fill = cntry)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(
+    values = c(
+      "DE" = "#33658a",     # Germany - Blue
+      "PL" = "#f6ae2d",     # Poland - Light Orange
+      "SI" = "#f26419"      # Slovenia - Dark Orange/Pink
+    ),
+    labels = c(
+      "DE" = "Germany",
+      "PL" = "Poland",
+      "SI" = "Slovenia"
+    )
+  ) +
+  labs(
+    title = "Average Trust in EU by Age Group and Country",
+    x = "Age Group",
+    y = "Mean Trust in EU",
+    fill = "Country"
+  ) +
+  theme_minimal()
+
+```
+
+-   Highest mean trust in EU among people younger than 18 in all three countries, with respondents from Germany having the highest trust.
+-   General downward trend in meant trust in EU across all countries up to the age group 55-64.
+-   Trust increases again for respondents being 65 or older.
+
+- **Average Trust in Politicians by Age Group and Country**
+
+```{r trstpol_by_age_in_cntry}
+dt_new %>%
+  group_by(cntry, age_group) %>%
+  summarise(mean_trustpol = mean(polintr_rev, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = age_group, y = mean_trustpol, fill = cntry)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(
+    values = c(
+      "DE" = "#33658a",     # Germany - Blue
+      "PL" = "#f6ae2d",     # Poland - Light Orange
+      "SI" = "#f26419"      # Slovenia - Dark Orange/Pink
+    ),
+    labels = c(
+      "DE" = "Germany",
+      "PL" = "Poland",
+      "SI" = "Slovenia"
+    )
+  ) +
+  labs(
+    title = "Average Trust in Politicians by Age Group and Country",
+    x = "Age Group",
+    y = "Mean Trust in Politicians",
+    fill = "Country"
+  ) +
+  theme_minimal()
+```
+
+-   clearly highest trust in politicians in Germany among all age groups.
+-   Polish respondents seem to have higher trust than Slovenian respondents in all age group, except for the groups 55-64 and 65+.
 
 # Checking for Correlations
 
@@ -308,3 +458,4 @@ dt_new %>%
   select(impcntr, imueclt, imwbcnt) %>%
   cor(use = "pairwise.complete.obs")
 ```
+
