@@ -1,6 +1,13 @@
 # Research Questions
 What shapes trust in the European Union and United Nations in Poland, Germany and Slovenia? A comparative Analysis of political attitudes, ideology and socio-demographics?
 
+# To Do:
+- Text für die About this page Seite mit Erklärung Länderauswahl & Hypothesen
+- Evtl. Trust Index oder einzelne Löschen
+- Bei allen Variablen Aussagekraft checken -> NAs & Outlier
+- Evtl. Immigration Index
+- Nochmal Lasso refinen (evtl ausweiten, aber mehr irrelevante vars löschen) -> ich würde das nochmal mit dem Dude abklären
+
 # Datasets
 1. Downloaded data named ESS_all
 2. Data Preparation -> Save data set as ESS_prepared
