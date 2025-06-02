@@ -209,3 +209,59 @@ if (!is.na(lambda_index)) {
 
 
 ```
+
+### Cutoff ausprobieren:
+
+Chatty empfiehlt 10-30 Variablen
+
+(Je geringer lambda, desto genauer passt das Model.) 
+
+- Lambda 10 vars = not found 
+- Lambda 15 vars = 0.1245 
+- Lambda 16 vars = 0.1134
+- Lambda 17 vars = not found
+- Lambda 18 vars = 0.0858
+- Lambda 19 vars = not found
+- Lambda 20 vars = not found 
+- Lambda 25 vars = 0.0591 
+- Lambda 30 vars = not found 
+
+Ich glaube 15 oder max. 20 sollten genug sein, sonst ist es zu viel.
+
+**ACHTUNG!** Noch checken:
+
+-   euftf & atcherp & trstplt -\> collinearity?
+-   stfedu checken aussagekraft
+-   possible indices: immigration & trust
+
+### Neues Subset aus lambda_max 
+
+```{r}
+dt_lasso_selected <- dt_filtered %>% select(all_of(vars_max), trstep)
+# insg. 20 variables
+
+```
+
+### Neues Subset mit originaler Codierung und Labels, aber nur lambda_max variablen
+
+```{r}
+#1. Neues Datenset mit Originalstruktur erstellen
+  dt_lasso_labeled <- dt_all %>%
+    select(all_of(vars_max), trstep)  
+  
+#2. Nur gültige Fälle von trstep behalten 
+  dt_lasso_labeled <- dt_lasso_labeled %>%
+    drop_na(trstep)  
+
+#3. Optional: Labels prüfen
+  library(labelled)
+  look_for(dt_lasso_labeled)
+```
+
+### Speichern des Datensets in Dateien
+
+```{r}
+write_sav(dt_lasso_labeled, here("data", "ESS_lasso.sav"))
+```
+
+
