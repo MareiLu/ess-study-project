@@ -1,7 +1,7 @@
 ---
 title: "Project Study"
-author: "Helena Zappe"
-date: "2025-06-02"
+author: "Marei Göbelbecker & Helena Zappe"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
@@ -9,56 +9,54 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r install-packages, eval=FALSE, include=FALSE}
+
 # Download Packages
 
-```{r install-packages, eval=FALSE, include=FALSE}
 install.packages(c(
-  "tidyverse",  # Datenaufbereitung & Visualisierung
-  "skimr",      # Übersichtliche Daten-Zusammenfassung
-  "psych",      # Deskriptive Statistik
-  "rmarkdown",  # Für R Markdown selbst
-  "knitr",      # Code-Ausgabe in R Markdown
-  "tinytex",    # Nur für PDF-Export nötig
-  "labelled"
+  "tidyverse",  
+  "skimr",      
+  "psych",      
+  "rmarkdown",  
+  "knitr",      
+  "labelled",
+  "here"
   ))
-tinytex::install_tinytex()  # Nur beim ersten Mal notwendig
 ```
+
+```{r load_packages, include=FALSE}
 
 # Load Packages
 
-```{r load-packages, include=FALSE}
-library(tidyverse)   # Bündelt ggplot2, dplyr, readr, etc. – für Datenimport, -aufbereitung, Visualisierung
-library(skimr)       # Für übersichtliche Zusammenfassungen von Datensätzen
-library(psych)       # Für deskriptive Statistiken (z.B. Mittelwert, SD, Median)
-library(rmarkdown)   # Für das Erstellen von HTML/PDF-Dokumenten
-library(knitr)       # Macht Code-Ausgabe in R Markdown hübsch und steuerbar
-library(tinytex)     # Wird nur gebraucht, wenn du PDF-Dateien erstellst
+library(haven)
+library(here)
+library(tidyverse)   
+library(skimr)       
+#library(psych)       
+library(rmarkdown)  
+library(knitr)       
 library(labelled)
 library(dplyr)
-library(ggplot2)
 library(tidyr)
-library(forcats)
+#library(forcats)
+library(glmnet)
 ```
 
-# Loading data
+```{r raw_data, include=FALSE}
 
-```{r}
+# Load Raw Data
 
-setwd("/Users/test/Documents/Studium/Semester 6/Project Study")
-
-dt_raw <- haven::read_sav(file.choose()) #ESS_all.sav
+dt_raw <- read_sav(here("data","ESS_all.sav"))
 
 ```
 
-*`"What factors shapes trust in the European Union in Poland, Germany, and Slovenia? A comparative analysis of political attitudes, ideology, and socio-demographics."`*
+`"What factors shapes trust in the European Union in Poland, Germany, and Slovenia? A comparative analysis of political attitudes, ideology, and socio-demographics."`
+
+*Note: We use the terms "Trust in the EU" and "Trust in the European Parliament" synonymously.*
 
 # Data Wrangling
 
--   filtering to our countries
--   recoding age group
--   reversing the scale for polintr (higher number = more interested)
--   adjusting labels for ESS rounds
--   winsorizing education years to get rid of outliers
+In order to work with our dataset, we need to reshape some variables. We are filtering for our three countries, recoding the age variable into age groups, reversing the scale for political interest (such that a high number on the scale means one has high interest in politics) and are winsurizing the education years to get rid of outliers.
 
 ```{r data_preparation}
 
@@ -91,13 +89,12 @@ dt_all <- dt_raw %>%
     essround == 10 ~ 2020,
     essround == 11 ~ 2022,
     TRUE ~ NA_real_
-  )) %>%
-    select(-c(agea, polintr, essround, trstun, trstplc, trstplt, trstprl, trstprt, name, pplfair, pplhlp, stfdem, imueclt, imdfetn, imbgeco, impcntr, badge))
+    )) %>%
+    select(-c(agea, polintr, essround, trstun, trstplc, trstplt, trstprl, trstprt, idno, proddate, bctprd, wrkorg, edition, name, pplfair, pplhlp, stfdem, imueclt, imdfetn, impcntr, imbgeco, badge)) # variables that are not relevant for interpretation
 
-```
 
-```{r}
-# winsorize education years to get rid of outliers
+# winsurize education years to get rid of outliers
+
 # Calculate thresholds
 q_lower <- quantile(dt_all$eduyrs, 0.01, na.rm = TRUE)
 q_upper <- quantile(dt_all$eduyrs, 0.99, na.rm = TRUE)
@@ -109,41 +106,26 @@ dt_all <- dt_all %>%
     eduyrs > q_upper ~ q_upper,
     TRUE ~ eduyrs
   )) %>%
-select(-eduyrs)
-
+  select(-eduyrs)
 ```
 
-```{r}
+```{r new_dataset, eval=FALSE}
 # Saving Data as new Dataset for Lasso
-
-write_sav(dt_all, "ESS_prepared.sav") 
-
+write_sav(dt_all, here("data", "ESS_prepared.sav"))
 ```
 
-```{r raw_data, include=FALSE}
+# Run LASSO to find the Best Variables for Analysis
 
-#Lade Daten und entferne nicht benötigte Variablen
-dt_all <- haven::read_sav(file.choose()) 
-
-#ESS_prepared.sav 
-
-```
-
-# LASSO to find best variables
-
-```{r}
-
+```{r prepare_lasso}
 # Step 1: Preparing Data for Lasso
 # using the gilmnet package
-  
+
 # filter variables with too many NAs:
 dt_filtered <- dt_all %>%
   drop_na(trstep) %>% # keep only valid observations in y
-  select(where(~ !all(is.na(.)))) %>% # 100% NAs
-  select(where(~ mean(is.na(.)) <= 0.5)) %>% # keep variables with less than 80% NAs
- # select(-c(feethngr, loylead, lrnobed, donprty, volunfp, pbldmna, implvdm)) %>% # these variables are not relevant enough for imputation. Also households net income has 79% NAs and is therefore not meaningful. 
-  select(-c(idno, proddate, bctprd, wrkorg, edition)) # Other variables that are not relevant for interpretation, stratum
-
+  select(where(~ !all(is.na(.)))) %>% # delete where is 100% NAs
+  select(where(~ mean(is.na(.)) <= 0.5)) %>% # only keep variables with less than 50% NAs
+  
 # checking for missing variables in percent
 dt_filtered %>%
   summarise(across(everything(), ~ mean(is.na(.)) * 100)) %>%
@@ -156,121 +138,48 @@ dt_filtered <- dt_filtered %>% drop_na(anweight) # dropping all obs where anweig
 weights <- dt_filtered$anweight # establishing the weighting
 
 # defining the response Variable
-y <- as.numeric(as_factor(dt_filtered$trstep))
+y <- as.numeric(as_factor(dt_filtered$trstep)) # vector saved as numeric
 table(y, useNA = "always")
 
 # define the predictor variable matrix
 x_data <- dt_filtered %>%
-  select(-c(trstep, anweight, pspwght, dweight, pweight)) %>% #prob
+  select(-c(trstep, anweight, pspwght, dweight, pweight )) %>% 
   zap_labels() %>%  # delete all labels
   mutate(across(where(is.factor), ~ as.numeric(as.character(.)))) # define all factor variables also as numeric
 
-x_data[is.na(x_data)] <- 0  # replaces all NA in x_data
+x_data[is.na(x_data)] <- 0  # impute / replace all NA with zero
 
 # define the matrix of response variables
 x <- data.matrix(x_data)
 
-# As long as you never change anything in dt_all (and you don't re‐run sample() anywhere else),
-# calling cv.glmnet() right after this will always split into the same 10 folds.
-set.seed(123) 
+# Set seed for reproducibility
+set.seed(123)
 
 # LASSO with Crossvalidation and weighting
-
 lasso_cv <- cv.glmnet(x, y, alpha = 1, weights = weights)
 
 ```
 
-## Fitting the LASSO Model
+## Fitting the LASSO model
 
-The bigger lambda, the more coefficients will be set to 0 for variable selection.
+Now we need to find the best lasso model for fit and interpretability. We want a robust, not overfitted model which can still be easily interpreted with its amount of variables.
 
-**best_lambda** (lambda.min) gives the most precise model:
+Before fitting the lasso model, we would suggest that the variables shaping trust in the EU would be: ppltrst, euftf, freehms, stfedu, stfgov, stfhlth, trstlgl, vote, imwbcnt, health, rlgatnd, gndr, year
 
-```{r}
-# Find best Lambda
-best_lambda <- lasso_cv$lambda.min
+To see if we are correct, we first need to find the lambda penalty term, that is used for variable selection. For further understanding it is important to know, that the bigger lambda gets, the more coefficients will be set to zero for the variable selection. Therefore we fitted the "best lambda model" with the minimal lambda and MSE, which gives the most precise model. With a Lambda of 0.0039 there are still 73 varaibles in the model, which is not well interpretable and probably overfitted. In addition, we ran a more robust and economic model by using lambda1.se which makes it easier to generalize. In this model, lambda is set higher at 0.0280 and also allows the MSE to be higher, which leaves us with 37 variables. This is already a lot better to interpret, but would still exceed the frame of this project. Therefore, in the last step, we fixed the number of variables and looked, whether lambda is still small enough to be used for interpretation. We decided to stay on le lower bound of 10 to 30 variables and tried several constellations. Ran over which variables are collinear or not useful for interpretation, to delete them before running lasso again. With this we came to the conclusion, that 13 variables with a lambda of 0.0821 will give us the best model for this project.
 
-# Final LASSO Model
-lasso_model <- glmnet(x, y, alpha = 1, lambda = best_lambda)
+```{r lasso_model_max}
 
-# Lambda Precise: 0.001855
+## Fixing Number of variables to get an interpretable model
 
-# Extracting the Coefficients
-coef_lasso <- coef(lasso_model)
-
-selected_vars <- rownames(coef_lasso)[which(coef_lasso[, 1] != 0)]
-selected_vars <- selected_vars[selected_vars != "(Intercept)"]
-
-print(selected_vars)
-
-```
-
-**lambda.1se** gives the more robust, more economic (sparsamere) model: (Oft besser generalisierbar)
-
-```{r}
-lambda_1se <- lasso_cv$lambda.1se
-
-model_robust <- glmnet(x, y, alpha = 1, lambda = lasso_cv$lambda.1se)
-
-# Lambda Robust: 0.017295
-
-# Extracting the Coefficients
-coef_robust <- coef(model_robust)
-
-vars_robust <- rownames(coef_robust)[which(coef_robust[, 1] != 0)]
-vars_robust <- vars_robust[vars_robust != "(Intercept)"]
-
-print(vars_robust)
-```
-
-Chatty: "In der LASSO-Analyse wurde mit lambda.min = 0.00140 das Modell mit der höchsten Vorhersagegenauigkeit identifiziert. Dieses Modell verwendet relativ viele Prädiktoren.
-
-Alternativ wurde mit lambda.1se = 0.01575 ein robusteres Modell berechnet, das sparsamer ist und potenziell besser generalisiert. Hier bleiben nur die wichtigsten Prädiktoren erhalten.
-
-Je nach Forschungsziel (Präzision vs. Interpretierbarkeit) kann eines der beiden Modelle bevorzugt werden."
-
-## Model Specific Coefficients:
-
-```{r}
-
-# Vergleich
-setdiff(selected_vars, vars_robust)  # Variablen nur im präzisen Modell
-setdiff(vars_robust, selected_vars)  # Variablen nur im sparsamen Modell
-
-```
-
-```{r}
-plot(lasso_cv)
-abline(v = log(lasso_cv$lambda.min), col = "blue", lty = 3)
-abline(v = log(lasso_cv$lambda.1se), col = "red", lty = 3)
-abline(v = log(lambda_max), col = "green", lty = 3)
-legend("topright", legend = c("lambda.min", "lambda.1se", "lambda_max"),
-       col = c("blue", "red", "green"), lty = 3)
-title("Cross-Validation: MSE über Lambda")
-```
-
-Chatty: - lambda.min (links) ergibt den niedrigsten mittleren Fehler – aber nutzt mehr Prädiktoren - lambda.1se (weiter rechts) hat leicht höheren Fehler, ist aber viel sparsamer Der Plot zeigt schön, dass der Fehler in einem sehr flachen Bereich minimal ist → daher kannst du das robustere, sparsamere Modell (lambda.1se) gut vertreten.
-
--\> Wir verwenden also die Variablen vom 2. Modell oder grenzen es weiter manuell ein.
-
-## Neues Datenset lambda_max
-
-```{r}
-#dt_lasso_selected <- dt_all %>% select(all_of(vars_robust), trstep)
-# insg. 66 variables (zu viele)
-```
-
-## Alternative: Interpretierbareres Modell mit max x Variablen
-
-```{r}
-lasso_model_max <- glmnet(x, y, alpha = 1, dfmax = 14)
+lasso_model_max <- glmnet(x, y, alpha = 1, dfmax = 14) 
 
 # Extracting the Coefficients
 coef_lasso <- coef(lasso_model_max)
 
 # Anzahl ≠ 0-Koeffizienten je Lambda (inkl. Intercept)
 nonzero <- lasso_model_max$df
-lambda_index <- which(nonzero == 14)[1]  # x Prädiktoren + 1 Intercept
+lambda_index <- which(nonzero == 14)[1]  # 13 Predictors + 1 Intercept
 
 # Wenn gefunden:
 if (!is.na(lambda_index)) {
@@ -280,59 +189,33 @@ if (!is.na(lambda_index)) {
   vars_max <- vars_max[vars_max != "(Intercept)"]
   print(vars_max)
 } else {
-  message("Kein Lambda mit genau x Prädiktoren gefunden.")
+  message("No Lambda found.")
 }
 ```
 
+```{r new_dataset, eval=FALSE}
+### Saving the new subset with original labels and coding
 
-### Cutoff ausprobieren:
-
-Chatty empfiehlt 10-30 Variablen
-
-(Je geringer lambda, desto genauer passt das Model.) 
-
-- Lambda 10 vars = not found 
-- Lambda 15 vars = 0.1245 
-- Lambda 16 vars = 0.1134
-- Lambda 17 vars = not found
-- Lambda 18 vars = 0.0858
-- Lambda 19 vars = not found
-- Lambda 20 vars = not found 
-- Lambda 25 vars = 0.0591 
-- Lambda 30 vars = not found 
-
-Ich glaube 15 oder max. 20 sollten genug sein, sonst ist es zu viel.
-
-### Neues Subset aus lambda_max 
-
-```{r}
-dt_lasso_selected <- dt_filtered %>% select(all_of(vars_max), trstep)
-# insg. 15 variables
-
-```
-
-### Neues Subset mit originaler Codierung und Labels, aber nur lambda_max variablen
-
-```{r}
-#1. Neues Datenset mit Originalstruktur erstellen
-  dt_lasso_labeled <- dt_all %>%
+# Creating a new dataset with original structure but only our selected predictors and the outcome variable
+  dt_lasso <- dt_all %>%
     select(all_of(vars_max), trstep)  
-  
-#2. Nur gültige Fälle von trstep behalten 
-  dt_lasso_labeled <- dt_lasso_labeled %>%
+
+# Keeping only valid cases of trstep
+  dt_lasso <- dt_lasso %>%
     drop_na(trstep)  
-
-#3. Optional: Labels prüfen
-  library(labelled)
-  look_for(dt_lasso_labeled)
+  
+# Saving it 
+write_sav(dt_lasso, here("data", "ESS_lasso.sav"))
 ```
 
-### Speichern des Datensets in Dateien
+The variables we will work with are: **cntry** (country), **ppltrst** (Most people can be trusted or you can't be too careful), **clsprty** (Feel closer to a particular party than all others), **euftf** (European Union: European unification go further or gone too far), **freehms** (Gays and lesbians free to live as they wish), **stfedu** (state of education in country nowadays), **stfgov** (How satisfied with the national government), **stfhlth** (State of health services in country nowadays), **trstlgl** (Trust in the legal system), **imwbcnt** (Immigrants make country worse or better place to live), **rlgatnd** (How often attend religious services apart from special occations), **gndr** (Gender), **age_group** (Age group), **year** (Ess round)
 
-```{r}
-write_sav(dt_lasso_labeled, "ESS_lasso.sav")
+Our hypothesis: Dependend on country, Gender and Age and differing by Year... ...the more politically interested and the more left on the political scale one is, the more they trust the European Parliament. ...the more open towards other people one is, the more one trusts the EU. ...the more satisfied one is with the state of their own county nowadays, the more one trusts in the EP.
 
-```
+-   Political attitudes: clsprty, euftf, stfgov, trstlgl
+-   Ideology: ppltrst, freehms, imwbcnt, rlgatnd
+-   Socio-demographics: stfedu, stfhlth, gndr, age_group
+-   Other: cntry, year
 
 # Descriptive Statistics
 ## Summary Statistics of Variables by Country
@@ -354,6 +237,19 @@ summary_table <- dt_lasso_labeled %>%
 View(as.data.frame(summary_table))
 
 ```
+- People feel closest to a particular party in Poland and close behind in Slovenia, Slightly less than half of the people feel close in Germany.
+- People in Poland think, that Unification should go further, in the other two countries as well, but not as much.
+- People in Germany are most satisfied with their national government and least satisfied in Poland.
+- People in Germany trust their legal system way more than the other two, the others are very close together.
+- People in Poland are least trusting towards others and most trusting in Germany.
+- People in Germany are the most open towards homosexuality, while the others are close together. 
+- Polish people are least positive towards immigrants, while people in Slovenia are a little more positive.
+- Polish people are by far least religious, and most in Germany.
+- State of education seems to be worst in Germany and best in Slovenia.
+- Health system seems to be worst in Poland and best in Germany.
+
+evtl. freehms scale umdrehen
+
 
 -   Mean political interest highest in Germany and lowest in Slovenia
 -   Education years highest in Germany and lowest in Slovenia
