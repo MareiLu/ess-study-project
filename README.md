@@ -19,7 +19,7 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 
 *Für das Paper & das Dashboard*
 - Betonung von Support for unification vs. Trust in Parliament in Ausarbeitung
-- Focus interpretation on few core interactions
+- income wurde nicht inkludiert, da es zu viele NAs hatte
 - Your conclusion is data-rich but a little dry or mechanical — your reader wants to know: What does this mean for EU legitimacy, political divides, or Eastern vs. Western Europe?
 - Suggestions:
    - End with a few big-picture insights:
