@@ -28,6 +28,112 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
    - What do gendered patterns of trust suggest?
    - Raise future questions: how would things look post-2024 EU election? Is this stable?
 
+# Chatty Models
+1. Sinnvolle Interaktionen
+Interaktionen prüfen, wenn du erwartest, dass der Effekt eines Prädiktors nicht für alle Gruppen gleich ist. Beispiele:
+
+🧩 Ideen für Interaktionen:
+Institutionelles Vertrauen × Land
+
+r
+Kopieren
+Bearbeiten
+ppltrst * cntry
+stfgov * cntry
+→ Fragt: Hat allgemeines oder Regierungstrust einen stärkeren Effekt in manchen Ländern?
+
+Politische Orientierung × Parteiidentifikation
+
+r
+Kopieren
+Bearbeiten
+clsprty * euftf
+→ Fragt: Haben Parteibindung und EU-Skepsis gemeinsam einen Effekt?
+
+Religion × Land
+
+r
+Kopieren
+Bearbeiten
+rlgatnd * cntry
+Geschlecht oder Altersgruppe × institutionelles Vertrauen
+
+r
+Kopieren
+Bearbeiten
+age_group * stfhlth
+gndr * trstlgl
+🔹 2. Modellspezifikation nach Gruppen
+Gruppenmodelle sind sinnvoll, wenn sich die ganze Struktur der Zusammenhänge je nach Land oder Altersgruppe unterscheiden könnte.
+
+Beispiel: ein Modell getrennt nach Land:
+
+r
+Kopieren
+Bearbeiten
+library(broom)
+dt_filtered %>%
+  group_by(cntry) %>%
+  do(tidy(lm(trstep ~ ppltrst + euftf + stfgov + clsprty + age_group + gndr, data = .)))
+Alternativ:
+
+r
+Kopieren
+Bearbeiten
+library(modelsummary)
+models <- dt_filtered %>%
+  group_split(cntry) %>%
+  map(~ lm(trstep ~ ppltrst + euftf + stfgov + age_group + clsprty, data = .))
+
+modelsummary(models, gof_omit = "IC|Log|Adj")
+🔹 3. Transformationen prüfen
+Am wichtigsten bei schiefen metrischen Prädiktoren (nicht bei Faktoren). Du könntest z. B.:
+
+r
+Kopieren
+Bearbeiten
+# Histogramm oder Dichte ansehen
+ggplot(dt_filtered, aes(x = ppltrst)) + geom_histogram(bins = 30)
+
+# Bei Schiefe: log-Transformation
+dt_filtered <- dt_filtered %>%
+  mutate(log_ppltrst = log(ppltrst + 1))
+Bei ESS-Variablen wie ppltrst, trstlgl, etc. mit Skala 0–10 ist eine Transformation meist nicht nötig, weil die Verteilung halbwegs symmetrisch ist. Nur wenn extrem schief oder sehr viele Nullen auftreten, wäre es sinnvoll.
+
+🔹 4. Weitere sinnvolle Diagnoseschritte
+Multikollinearität prüfen
+
+r
+Kopieren
+Bearbeiten
+library(car)
+vif(model1)
+Residuenplot
+
+r
+Kopieren
+Bearbeiten
+plot(model1)
+Vergleich von Modellen mit/ohne Interaktionen
+
+r
+Kopieren
+Bearbeiten
+model2 <- update(model1, . ~ . + ppltrst*cntry)
+anova(model1, model2)
+🔹 Empfehlung: So könntet ihr jetzt weitermachen
+Modelldiagnose & Interpretation von model1
+
+Gezielte Interaktionen auf Basis eurer Forschungsfrage:
+
+z. B. "Hat allgemeines Vertrauen in Institutionen einen anderen Effekt auf EU-Vertrauen je nach Land?"
+
+Modelle nach Ländern und/oder Altersgruppen getrennt schätzen
+
+Optional: Transformationen, falls bei Einzelvariablen nötig
+
+Visuelle Darstellung von Interaktionen (ggplot2: geom_smooth() oder interactions-Paket)
+
 # Datasets
 1. Downloaded data named ESS_all
 2. Data Preparation -> Save data set as ESS_prepared
