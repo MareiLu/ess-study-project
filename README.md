@@ -13,10 +13,20 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 - Multicollinearity checken
 - Group variables & group models
 - Variance inflation factor / reduce models with robustness check
+- Guide the reader with visuals: marginal effects plots, country-specific slopes
+- Focus your interpretation on a few core interactions (e.g., trust in legal system, voting behavior, religiosity)
+- Ask yourself: What are we learning about Poland, Germany, and Slovenia politically, socially, ideologically? Bring it back to meaning, not just numbers
 
 *Für das Paper & das Dashboard*
 - Betonung von Support for unification vs. Trust in Parliament in Ausarbeitung
 - Focus interpretation on few core interactions
+- Your conclusion is data-rich but a little dry or mechanical — your reader wants to know: What does this mean for EU legitimacy, political divides, or Eastern vs. Western Europe?
+- Suggestions:
+   - End with a few big-picture insights:
+   - Why might government satisfaction matter more in Germany?
+   - Why is religiosity politically reversed in Poland and Slovenia?
+   - What do gendered patterns of trust suggest?
+   - Raise future questions: how would things look post-2024 EU election? Is this stable?
 
 # Datasets
 1. Downloaded data named ESS_all
