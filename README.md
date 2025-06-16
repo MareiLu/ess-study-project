@@ -1,5 +1,5 @@
 # Research Questions
-What shapes trust in the European Union and United Nations in Poland, Germany and Slovenia? A comparative Analysis of political attitudes, ideology and socio-demographics?
+What shapes trust in the European Union and United Nations in Poland, Germany and Slovenia? A comparative Analysis of political attitudes, ideology and socio-demographics.
 
 # To Do:
 *Dashboard*
@@ -110,6 +110,29 @@ Visuelle Darstellung von Interaktionen (ggplot2: geom_smooth() oder interactions
 4. descriptive statistics on ESS_lasso
 5. Models on ESS_lasso
 6. App on ESS_lasso
+
+# Variable Groups
+**political attitudes**
+-  **clsprty** (Feel closer to a particular party than all others)
+-  **euftf** (European Union: European unification go further or gone too far)
+-  **stfgov** (How satisfied with the national government)
+-  **trstlgl** (Trust in the legal system)
+
+**ideology** 
+- **ppltrst** (Most people can be trusted or you can't be too careful)
+- **freehms** (Gays and lesbians free to live as they wish)
+- **imwbcnt** (Immigrants make country worse or better place to live)
+- **rlgatnd** (How often attend religious services apart from special occations)
+  
+**socio-demographics**
+- **stfedu** (state of education in country nowadays)
+- **stfhlth** (State of health services in country nowadays)
+- **gndr** (Gender)
+- **age_group** (Age group)
+
+**Others**
+- **cntry** (Country)
+- **year** (Ess round)
    
 # Dashboard 
 "About this Project", "General Insights/Descriptives", "General Findings", eventually "Implications/Predictions"
@@ -119,10 +142,7 @@ Visuelle Darstellung von Interaktionen (ggplot2: geom_smooth() oder interactions
 -> maybe separate the "General Insights/Descriptives" into the groups mentioned in the research question: political attitudes, ideology, and socio-demographics (kann man so Untertabs erstellen?)
 
 # Notes
-- UN & EU? Or just EU? -> highly correlated but not perfectly, rather focus on EU
-- What drives attitude towards EU? -> lasso regression leaves us with 10 most important; only include ones with not too high correlation; then look at how does this diverge by age group; maybe not trust in politics & in UN; macroeconomic, socio-economic, internet usage, satisfaction/happiness, (trust & satisfaction in government only if we can derive something from it)
 - dividing by age makes sense? yes (if different results) "Difference in driving factors in age groups"
-- education years: binsurize 5%-99% quantile so put value outside the quantile into it (not loosing observation) or remove if not many
 - if 1-10 generally no log if evently distributed, if we see pattern in simple graph, possibly use others
 - for numeric variables (income) log for normal distr. in regressions
 - for age incl. age_squared because increasing then decreasing
