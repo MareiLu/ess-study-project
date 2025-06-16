@@ -32,25 +32,7 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 1. Sinnvolle Interaktionen
 Interaktionen prüfen, wenn du erwartest, dass der Effekt eines Prädiktors nicht für alle Gruppen gleich ist. Beispiele:
 
-🧩 Ideen für Interaktionen:
-
-Institutionelles Vertrauen × Land
-ppltrst * cntry
-stfgov * cntry
-→ Fragt: Hat allgemeines oder Regierungstrust einen stärkeren Effekt in manchen Ländern?
-
-Politische Orientierung × Parteiidentifikation
-clsprty * euftf
-→ Fragt: Haben Parteibindung und EU-Skepsis gemeinsam einen Effekt?
-
-Religion × Land
-rlgatnd * cntry
-
-Geschlecht oder Altersgruppe × institutionelles Vertrauen
-age_group * stfhlth
-gndr * trstlgl
-
-🔹 2. Modellspezifikation nach Gruppen
+2. Modellspezifikation nach Gruppen
 Gruppenmodelle sind sinnvoll, wenn sich die ganze Struktur der Zusammenhänge je nach Land oder Altersgruppe unterscheiden könnte.
 
 Beispiel: ein Modell getrennt nach Land:
