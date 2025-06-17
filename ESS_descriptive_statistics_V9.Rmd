@@ -396,7 +396,9 @@ ggplot(vote_data, aes(x = cntry, y = percentage, fill = factor(vote, levels = re
 -   highest proportion of voters in Germany
 -   Slovenia has the highest share of people that did not vote
 
-## Trust in EU over Time for all three Countries
+## Trust in EU  
+
+### by Country over Time
 
 ```{r}
 # Summarize mean trust per country and year
@@ -413,7 +415,7 @@ trust_long <- trust_trends %>%
   pivot_longer(cols = c(trust_EU),
                names_to = "institution",
                values_to = "trust")
-
+#Plot
 ggplot(trust_trends, aes(x = year, y = trust_EU, color = cntry)) +
   geom_line(size = 1.2) +
   geom_point(size = 2) +
@@ -442,6 +444,31 @@ ggplot(trust_trends, aes(x = year, y = trust_EU, color = cntry)) +
 -   mean trust in Germany peaked in 2023 and was the lowest in 2010
 -   Slovenia shows the highest fluctuations in mean trust in the EU,
     with a sharp decline between 2006 and 2014
+    
+### by Age Group and Country
+
+```{r}
+dt_filtered %>%
+  group_by(age_group, cntry) %>%
+  summarise(trstep = mean(trstep, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = age_group, y = trstep, fill = cntry)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(
+    values = c(
+      "DE" = "#33658a",   # Germany
+      "PL" = "#f6ae2d",   # Poland
+      "SI" = "#f26419"    # Slovenia
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(
+    title = "Mean Trust in the EU by Age Group and Country",
+    x = "Age Group",
+    y = "Mean Trust in the EU",
+    fill = "Country"
+  ) +
+  theme_minimal()
+```
 
 ## Distribution of Age Groups
 
