@@ -29,6 +29,9 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
    - What do gendered patterns of trust suggest?
    - Raise future questions: how would things look post-2024 EU election? Is this stable?
 
+ *Fragen*
+- Do we only work with the variables from LASSO or can we use some other variables for our visualizations to get some insights from them, such as Left-Right-Scale
+
 # Chatty Models
 1. Sinnvolle Interaktionen
 Interaktionen prüfen, wenn du erwartest, dass der Effekt eines Prädiktors nicht für alle Gruppen gleich ist. Beispiele:
