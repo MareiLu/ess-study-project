@@ -399,6 +399,20 @@ ggplot(vote_data, aes(x = cntry, y = percentage, fill = factor(vote, levels = re
 ## Trust in EU over Time for all three Countries
 
 ```{r}
+# Summarize mean trust per country and year
+trust_trends <- dt_filtered %>%
+  filter(cntry %in% c("DE", "PL", "SI")) %>%
+  group_by(cntry, year) %>%
+  summarise(
+    trust_EU = mean(trstep, na.rm = TRUE),
+    .groups = "drop"
+  ) 
+
+#Reshaping to long format for plotting
+trust_long <- trust_trends %>%
+  pivot_longer(cols = c(trust_EU),
+               names_to = "institution",
+               values_to = "trust")
 
 ggplot(trust_trends, aes(x = year, y = trust_EU, color = cntry)) +
   geom_line(size = 1.2) +
