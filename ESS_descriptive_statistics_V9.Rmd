@@ -1233,10 +1233,59 @@ summary(model5)
 
 ## Country-Specific Group Models 
 
-### Poland
+- for comparison, because regressions with interactions give long outputs are hard to interpret
 
-### Slovenia
+### Baseline Linear Model for Poland
 
-### Germany
+```{r}
+
+model_PL <- lm(trstep, ppltrst, euftf, stfedu, stfgov, stfhlth, trstlgl, imwbcnt, rlgatnd_rev, gndr, agea,
+               data = filter(dt_filtered, cntry == "PL"))
+
+summary(model_PL)
+```
+
+-   stfedu are not statistically significant
+-   trstlgl, euftf, clsprty and gender are strongest predictors
+
+### Baseline Linear Model for Slovenia
+
+```{r}
+
+model_SI <- lm(trstep ~ ppltrst + euftf + freehms + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd + gndr + year + clsprty + age_group, 
+               data = filter(dt_filtered, cntry == "SI"))
+
+summary(model_SI)
+```
+
+-imwbcnt not statistically significant -trstlgl, gndr, clsprty stongest
+predictors
+
+### Baseline Linear Model for Germany
+
+```{r}
+
+model_DE <- lm(trstep, ppltrst, euftf, stfedu, stfgov, stfhlth, trstlgl, imwbcnt, rlgatnd_rev, gndr, agea, 
+               data = filter(dt_filtered, cntry == "DE"))
+
+summary(model_DE)
+```
+
+-year not statistically significant -stfgov, trstlgl, gndr strongest
+predictors
+
 
 ## Diagnostics & Model Assumptions
+
+*Multivariate Normality*
+- analysis assumes that the residuals (differences between predicted and observed values) are normally distributed
+- assumption can be assessed by examining histograms or Q-Q plots of the residuals, or through statistical tests such as Kolmogorov-Smirnov test
+
+*No multicollienarity*
+- correlation matrices, coefficients ideally below 0.8
+- Variance Inflation Factor (VIF): values above 10 indicating problematic multicollinearity
+
+*Homoscedasticity*
+- the variance of error terms (residuals) should be consistent across all levels of the independent variables
+- a scatterplot of residuals versus predicted values should not display and discernible pattern, such as a cone-shaped distribution 
+- adressing it might involve data transformation or adding a quadratic term to the model
