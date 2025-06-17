@@ -443,7 +443,7 @@ ggplot(trust_trends, aes(x = year, y = trust_EU, color = cntry)) +
 -   Slovenia shows the highest fluctuations in mean trust in the EU,
     with a sharp decline between 2006 and 2014
 
-## Distribution of Age Groups - Tabelle reicht eigentlich, da Graph nicht aussagekräftig
+## Distribution of Age Groups
 
 ```{r}
 table(dt_filtered$age_group)
@@ -517,38 +517,6 @@ dt_filtered %>%
     to the age group 55-64
 -   trust increases again for respondents being 65 or older
 
-## Average Trust in Politicians by Age Group and Country
-
-```{r}
-dt_filtered %>%
-  group_by(cntry, age_group) %>%
-  summarise(mean_trustpol = mean(polintr_rev, na.rm = TRUE), .groups = "drop") %>%
-  ggplot(aes(x = age_group, y = mean_trustpol, fill = cntry)) +
-  geom_col(position = "dodge") +
-  scale_fill_manual(
-    values = c(
-      "DE" = "#33658a",     # Germany - Blue
-      "PL" = "#f6ae2d",     # Poland - Light Orange
-      "SI" = "#f26419"      # Slovenia - Dark Orange/Pink
-    ),
-    labels = c(
-      "DE" = "Germany",
-      "PL" = "Poland",
-      "SI" = "Slovenia"
-    )
-  ) +
-  labs(
-    title = "Average Trust in Politicians by Age Group and Country",
-    x = "Age Group",
-    y = "Mean Trust in Politicians",
-    fill = "Country"
-  ) +
-  theme_minimal()
-```
-
--   clearly highest trust in politicians in Germany among all age groups
--   Polish respondents seem to have higher trust than Slovenian
-    respondents in all age groups, except for the group 55-64
 
 ## Left-Right Political Placement across Countries - Also not one of our predictors
 
