@@ -333,34 +333,7 @@ dt_filtered %>%
 
 -   Mean trust in EU is rather similar across all three countries
 
-# Visualization
-
-## Distribution of Gender by Country
-
-```{r}
-
-dt_filtered %>%
-  mutate(gndr = as_factor(gndr)) %>%  # convert haven_labelled to factor
-  count(cntry, gndr) %>%
-  group_by(cntry) %>%
-  mutate(prop = n / sum(n) * 100) %>%
-  ggplot(aes(x = cntry, y = prop, fill = gndr)) +
-  geom_col(position = "dodge") +
-  labs(
-    title = "Relative Distribution of Gender by Country",
-    x = "Country",
-    y = "Proportion of Respondents",
-    fill = "Gender"
-  ) +
-  theme_minimal()
-
-```
-
--   distribution among all three countries rather similar around 50% for
-    each gender
--   Germany has slightly more male respondents
--   Poland and Slovenia have slightly more female respondents
--   gap is the highest in Slovenia
+# Visualization - Other interesting variables
 
 ## Distribution of Voting Behavior - Not necessary, since not one of our predictors
 
@@ -397,6 +370,99 @@ ggplot(vote_data, aes(x = cntry, y = percentage, fill = factor(vote, levels = re
 
 -   highest proportion of voters in Germany
 -   Slovenia has the highest share of people that did not vote
+
+## Left-Right Political Placement across Countries - Also not one of our predictors
+
+```{r}
+
+# Filtering to valid left-right scale values
+lr_data <- dt_filtered %>%
+  filter(!is.na(lrscale)) %>%
+  group_by(cntry, lrscale) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(cntry) %>%
+  mutate(percentage = count / sum(count) * 100)
+
+
+#Plotting the diverging stacked bar chart
+ggplot(lr_data, aes(x = cntry, y = percentage, fill = factor(lrscale, levels = rev(0:10)))) +
+  geom_bar(stat = "identity", position = "stack") +
+  coord_flip() +
+  scale_fill_manual(
+    values = c(
+      "0" = "#00002E", "1" = "#002060", "2" = "#003090", "3" = "#4A90E2",
+      "4" = "#8AB4F8", "5" = "#DDDDDD",
+      "6" = "#FFE399", "7" = "#FFBE5C", "8" = "#FF914D", "9" = "#C23B22", "10" = "#800000"
+    ),
+    name = "Left-Right Scale"
+  ) +
+  labs(
+    title = "Placement on Left-Right Political Scale",
+    x = NULL,
+    y = "Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+```
+
+-   highest share of respondents selected 5 as their political attitude
+-   higher share of respondents in Germany and Slovenia are rather left
+-   higher share of respondents in Poland are rather right
+
+## Years of Education
+
+### by Country
+
+```{r}
+ggplot(dt_filtered, aes(x = cntry, y = eduyrs_winsor, fill = cntry)) +
+  geom_boxplot() +
+  scale_fill_manual(
+    values = c(
+      "DE" = "#33658a",   # Germany - Blue
+      "PL" = "#f6ae2d",   # Poland - Light Orange
+      "SI" = "#f26419"    # Slovenia - Dark Orange/Pink
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(title = "Education Years by Country",
+       y = "Years of Education", x = "Country")
+
+```
+
+-   we winsorized outliers earlier
+-   highest years of education in Germany
+
+### by Age Group and Country
+
+```{r}
+dt_filtered %>%
+  group_by(age_group, cntry) %>%
+  summarise(mean_eduyrs = mean(eduyrs_winsor, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = age_group, y = mean_eduyrs, fill = cntry)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(
+    values = c(
+      "DE" = "#33658a",   # Germany
+      "PL" = "#f6ae2d",   # Poland
+      "SI" = "#f26419"    # Slovenia
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(
+    title = "Mean Years of Education by Age Group and Country",
+    x = "Age Group",
+    y = "Mean Years of Education",
+    fill = "Country"
+  ) +
+  theme_minimal()
+```
+
+-   graph illustrates differences among age groups across countries
+-   Germany has the highest average years of education among all age
+    groups, followed by Poland
+
+# Visualization - Dependent Variable
 
 ## Trust in EU  
 
@@ -464,7 +530,7 @@ dt_filtered %>%
     labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
   ) +
   labs(
-    title = "Mean Trust in the EU by Age Group and Country",
+    title = "Average Trust in the EU by Age Group and Country",
     x = "Age Group",
     y = "Mean Trust in the EU",
     fill = "Country"
@@ -478,8 +544,36 @@ dt_filtered %>%
     to the age group 55-64
 -   trust increases again for respondents being 65 or older
 
+# Visualization - Sociodemographic Predictors
 
-## Distribution of Age Groups
+## Distribution of Gender by Country
+
+```{r}
+
+dt_filtered %>%
+  mutate(gndr = as_factor(gndr)) %>%  # convert haven_labelled to factor
+  count(cntry, gndr) %>%
+  group_by(cntry) %>%
+  mutate(prop = n / sum(n) * 100) %>%
+  ggplot(aes(x = cntry, y = prop, fill = gndr)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Relative Distribution of Gender by Country",
+    x = "Country",
+    y = "Proportion of Respondents",
+    fill = "Gender"
+  ) +
+  theme_minimal()
+
+```
+
+-   distribution among all three countries rather similar around 50% for
+    each gender
+-   Germany has slightly more male respondents
+-   Poland and Slovenia have slightly more female respondents
+-   gap is the highest in Slovenia
+
+## Distribution of Age Groups - Tabelle reicht eigentlich, da Graph nicht aussagekräftig
 
 ```{r}
 table(dt_filtered$age_group)
@@ -505,44 +599,7 @@ dt_filtered %>%
     indicating an aging population
 
 
-## Left-Right Political Placement across Countries - Also not one of our predictors
-
-```{r}
-
-# Filtering to valid left-right scale values
-lr_data <- dt_filtered %>%
-  filter(!is.na(lrscale)) %>%
-  group_by(cntry, lrscale) %>%
-  summarise(count = n(), .groups = "drop") %>%
-  group_by(cntry) %>%
-  mutate(percentage = count / sum(count) * 100)
-
-
-#Plotting the diverging stacked bar chart
-ggplot(lr_data, aes(x = cntry, y = percentage, fill = factor(lrscale, levels = rev(0:10)))) +
-  geom_bar(stat = "identity", position = "stack") +
-  coord_flip() +
-  scale_fill_manual(
-    values = c(
-      "0" = "#00002E", "1" = "#002060", "2" = "#003090", "3" = "#4A90E2",
-      "4" = "#8AB4F8", "5" = "#DDDDDD",
-      "6" = "#FFE399", "7" = "#FFBE5C", "8" = "#FF914D", "9" = "#C23B22", "10" = "#800000"
-    ),
-    name = "Left-Right Scale"
-  ) +
-  labs(
-    title = "Placement on Left-Right Political Scale",
-    x = NULL,
-    y = "Percentage (%)"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "bottom")
-
-```
-
--   highest share of respondents selected 5 as their political attitude
--   higher share of respondents in Germany and Slovenia are rather left
--   higher share of respondents in Poland are rather right
+# Visualization - Political Attitudes
 
 ## Satisfaction with National Government
 
@@ -603,210 +660,6 @@ dt_filtered %>%
   ) +
   theme_minimal()
 
-```
-
-## Years of Education
-
-### by Country
-
-```{r}
-ggplot(dt_filtered, aes(x = cntry, y = eduyrs_winsor, fill = cntry)) +
-  geom_boxplot() +
-  scale_fill_manual(
-    values = c(
-      "DE" = "#33658a",   # Germany - Blue
-      "PL" = "#f6ae2d",   # Poland - Light Orange
-      "SI" = "#f26419"    # Slovenia - Dark Orange/Pink
-    ),
-    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
-  ) +
-  labs(title = "Education Years by Country",
-       y = "Years of Education", x = "Country")
-
-```
-
--   we winsorized outliers earlier
--   highest years of education in Germany
-
-### by Age Group and Country
-
-```{r}
-dt_filtered %>%
-  group_by(age_group, cntry) %>%
-  summarise(mean_eduyrs = mean(eduyrs_winsor, na.rm = TRUE), .groups = "drop") %>%
-  ggplot(aes(x = age_group, y = mean_eduyrs, fill = cntry)) +
-  geom_col(position = "dodge") +
-  scale_fill_manual(
-    values = c(
-      "DE" = "#33658a",   # Germany
-      "PL" = "#f6ae2d",   # Poland
-      "SI" = "#f26419"    # Slovenia
-    ),
-    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
-  ) +
-  labs(
-    title = "Mean Years of Education by Age Group and Country",
-    x = "Age Group",
-    y = "Mean Years of Education",
-    fill = "Country"
-  ) +
-  theme_minimal()
-```
-
--   graph illustrates differences among age groups across countries
--   Germany has the highest average years of education among all age
-    groups, followed by Poland
-
-## Attitudes towards Immigrants
-
-### by Age Group and Country
-
-```{r}
-dt_filtered %>%
-  group_by(age_group, cntry) %>%
-  summarise(mean_imwbcnt = mean(imwbcnt, na.rm = TRUE), .groups = "drop") %>%
-  ggplot(aes(x = age_group, y = mean_imwbcnt, fill = cntry)) +
-  geom_col(position = "dodge") +
-  scale_fill_manual(
-    values = c(
-      "DE" = "#33658a",   # Germany
-      "PL" = "#f6ae2d",   # Poland
-      "SI" = "#f26419"    # Slovenia
-    ),
-    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
-  ) +
-  labs(
-    title = "Attitudes towards Immigrants by Age Group and Country",
-    x = "Age Group",
-    y = "Attitudes towards Immigrants",
-    fill = "Country"
-  ) +
-  theme_minimal()
-```
-
--   Polish respondents seem to be more welcoming of immigrants among all
-    age groups
--   Slovenian respondents seem to be the least welcoming of immigrants
-    among all age groups
--   this seems to be a contradiction to the distribution of the
-    left-right scale, where a higher share of Polish respondents
-    indicated to be more right, and a higher share of Slovenian
-    respondents indicated to be more left
--   a boxplot in the next step could help to check for outliers
--   reasons??
-
-### per Country
-
-```{r}
-ggplot(dt_filtered, aes(x = cntry, y = imwbcnt, fill = cntry)) +
-  geom_boxplot() +
-  scale_fill_manual(
-    values = c(
-      "DE" = "#33658a",   # Germany - Blue
-      "PL" = "#f6ae2d",   # Poland - Light Orange
-      "SI" = "#f26419"    # Slovenia - Dark Orange/Pink
-    ),
-    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
-  ) +
-  labs(title = "Immigration Attitude by Country",
-       y = "Immigration Attitude", x = "Country")
-```
-
--   there do not seem to be high outliers for positive immigration
-    attitude among Polish respondents
--   Why are Polish respondents so welcoming when they are rather right?
-    Would be interesting to see if the respondents who are rather right
-    are also more welcoming, or if the average is high because of the
-    very high immigration attitude among rather left respondents
-
-## Trust in People by Country
-
-```{r}
-ggplot(dt_filtered, aes(x = cntry, y = ppltrst, fill = cntry)) +
-  geom_boxplot() +
-  scale_fill_manual(
-    values = c(
-      "DE" = "#33658a",   # Germany - Blue
-      "PL" = "#f6ae2d",   # Poland - Light Orange
-      "SI" = "#f26419"    # Slovenia - Dark Orange/Pink
-    ),
-    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
-  ) +
-  labs(title = "Trust in People by Country",
-       y = "Trust", x = "Country")
-```
-
--   lowest trust in people in Poland
-
-## Unification Progress Satisfaction
-
-### by Country on Average
-
-Higher values indicate a stronger desire for unification.
-
-```{r}
-# Filtering to valid scale values
-eu_data <- dt_filtered %>%
-  filter(!is.na(euftf)) %>%
-  group_by(cntry, euftf) %>%
-  summarise(count = n(), .groups = "drop") %>%
-  group_by(cntry) %>%
-  mutate(percentage = count / sum(count) * 100)
-
-
-#Plotting the diverging stacked bar chart
-ggplot(eu_data, aes(x = cntry, y = percentage, fill = factor(euftf, levels = rev(0:10)))) +
-  geom_bar(stat = "identity", position = "stack") +
-  coord_flip() +
-  scale_fill_manual(
-    values = c(
-      "0" = "#00002E", "1" = "#002060", "2" = "#003090", "3" = "#4A90E2",
-      "4" = "#8AB4F8", "5" = "#DDDDDD",
-      "6" = "#FFE399", "7" = "#FFBE5C", "8" = "#FF914D", "9" = "#C23B22", "10" = "#800000"
-    ),
-    name = "European Unification Go Further or Gone Too Far"
-  ) +
-  labs(
-    title = "Satisfaction with Unification by Country",
-    x = NULL,
-    y = "Percentage (%)"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "bottom")
-```
-
--   in all three countries, the majority of repsondents voted values
-    above average, indicating they want the unification to go further
-
-### by Country Over Time
-
-```{r}
-# Ensure year is treated properly
-dt_filtered %>%
-  filter(!is.na(euftf), !is.na(year)) %>%
-  group_by(cntry, year, euftf) %>%
-  summarise(count = n(), .groups = "drop") %>%
-  group_by(cntry, year) %>%
-  mutate(percentage = count / sum(count) * 100) %>%
-  ggplot(aes(x = cntry, y = percentage, fill = factor(euftf, levels = rev(0:10)))) +
-  geom_bar(stat = "identity", position = "stack") +
-  coord_flip() +
-  facet_wrap(~year) +
-  scale_fill_manual(
-    values = c(
-      "0" = "#00002E", "1" = "#002060", "2" = "#003090", "3" = "#4A90E2",
-      "4" = "#8AB4F8", "5" = "#DDDDDD",
-      "6" = "#FFE399", "7" = "#FFBE5C", "8" = "#FF914D", "9" = "#C23B22", "10" = "#800000"
-    ),
-    name = "European Unification Go Further or Gone Too Far"
-  ) +
-  labs(
-    title = "Satisfaction with Unification by Country and Year",
-    x = NULL,
-    y = "Percentage (%)"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "bottom")
 ```
 
 ## Satisfaction with State of Education by Country
@@ -966,6 +819,162 @@ dt_filtered %>%
 -   lowest value in Slovenia with just above 3 in 2010
 -   lowest value in Poland with just above 3 in 2020
 
+
+# Visualization - Ideology
+
+## Attitudes towards Immigrants
+
+### by Age Group and Country
+
+```{r}
+dt_filtered %>%
+  group_by(age_group, cntry) %>%
+  summarise(mean_imwbcnt = mean(imwbcnt, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = age_group, y = mean_imwbcnt, fill = cntry)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(
+    values = c(
+      "DE" = "#33658a",   # Germany
+      "PL" = "#f6ae2d",   # Poland
+      "SI" = "#f26419"    # Slovenia
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(
+    title = "Attitudes towards Immigrants by Age Group and Country",
+    x = "Age Group",
+    y = "Attitudes towards Immigrants",
+    fill = "Country"
+  ) +
+  theme_minimal()
+```
+
+-   Polish respondents seem to be more welcoming of immigrants among all
+    age groups
+-   Slovenian respondents seem to be the least welcoming of immigrants
+    among all age groups
+-   this seems to be a contradiction to the distribution of the
+    left-right scale, where a higher share of Polish respondents
+    indicated to be more right, and a higher share of Slovenian
+    respondents indicated to be more left
+-   a boxplot in the next step could help to check for outliers
+-   reasons??
+
+### per Country
+
+```{r}
+ggplot(dt_filtered, aes(x = cntry, y = imwbcnt, fill = cntry)) +
+  geom_boxplot() +
+  scale_fill_manual(
+    values = c(
+      "DE" = "#33658a",   # Germany - Blue
+      "PL" = "#f6ae2d",   # Poland - Light Orange
+      "SI" = "#f26419"    # Slovenia - Dark Orange/Pink
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(title = "Immigration Attitude by Country",
+       y = "Immigration Attitude", x = "Country")
+```
+
+-   there do not seem to be high outliers for positive immigration
+    attitude among Polish respondents
+-   Why are Polish respondents so welcoming when they are rather right?
+    Would be interesting to see if the respondents who are rather right
+    are also more welcoming, or if the average is high because of the
+    very high immigration attitude among rather left respondents
+
+## Trust in People by Country
+
+```{r}
+ggplot(dt_filtered, aes(x = cntry, y = ppltrst, fill = cntry)) +
+  geom_boxplot() +
+  scale_fill_manual(
+    values = c(
+      "DE" = "#33658a",   # Germany - Blue
+      "PL" = "#f6ae2d",   # Poland - Light Orange
+      "SI" = "#f26419"    # Slovenia - Dark Orange/Pink
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(title = "Trust in People by Country",
+       y = "Trust", x = "Country")
+```
+
+-   lowest trust in people in Poland
+
+## Unification Progress Satisfaction
+
+### by Country on Average
+
+Higher values indicate a stronger desire for unification.
+
+```{r}
+# Filtering to valid scale values
+eu_data <- dt_filtered %>%
+  filter(!is.na(euftf)) %>%
+  group_by(cntry, euftf) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(cntry) %>%
+  mutate(percentage = count / sum(count) * 100)
+
+
+#Plotting the diverging stacked bar chart
+ggplot(eu_data, aes(x = cntry, y = percentage, fill = factor(euftf, levels = rev(0:10)))) +
+  geom_bar(stat = "identity", position = "stack") +
+  coord_flip() +
+  scale_fill_manual(
+    values = c(
+      "0" = "#00002E", "1" = "#002060", "2" = "#003090", "3" = "#4A90E2",
+      "4" = "#8AB4F8", "5" = "#DDDDDD",
+      "6" = "#FFE399", "7" = "#FFBE5C", "8" = "#FF914D", "9" = "#C23B22", "10" = "#800000"
+    ),
+    name = "European Unification Go Further or Gone Too Far"
+  ) +
+  labs(
+    title = "Satisfaction with Unification by Country",
+    x = NULL,
+    y = "Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+-   in all three countries, the majority of repsondents voted values
+    above average, indicating they want the unification to go further
+
+### by Country Over Time
+
+```{r}
+# Ensure year is treated properly
+dt_filtered %>%
+  filter(!is.na(euftf), !is.na(year)) %>%
+  group_by(cntry, year, euftf) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(cntry, year) %>%
+  mutate(percentage = count / sum(count) * 100) %>%
+  ggplot(aes(x = cntry, y = percentage, fill = factor(euftf, levels = rev(0:10)))) +
+  geom_bar(stat = "identity", position = "stack") +
+  coord_flip() +
+  facet_wrap(~year) +
+  scale_fill_manual(
+    values = c(
+      "0" = "#00002E", "1" = "#002060", "2" = "#003090", "3" = "#4A90E2",
+      "4" = "#8AB4F8", "5" = "#DDDDDD",
+      "6" = "#FFE399", "7" = "#FFBE5C", "8" = "#FF914D", "9" = "#C23B22", "10" = "#800000"
+    ),
+    name = "European Unification Go Further or Gone Too Far"
+  ) +
+  labs(
+    title = "Satisfaction with Unification by Country and Year",
+    x = NULL,
+    y = "Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+
 ## Attendance of Religious Services apart from Special Occasions
 
 ### by Country over Time
@@ -1031,6 +1040,7 @@ dt_filtered %>%
     by Slovenia and then Poland
 -   Poland is by far the country with the highest attendance, even
     though there is an upward trend that peaked in 2020
+
 
 # Models
 
