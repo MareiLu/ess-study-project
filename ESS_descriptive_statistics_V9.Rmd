@@ -481,28 +481,15 @@ dt_filtered %>%
 
 ```{r}
 table(dt_filtered$age_group)
-dt_filtered %>%
-  count(cntry, age_group) %>%
-  group_by(cntry) %>%
-  mutate(prop = n / sum(n) * 100) %>%
-  ggplot(aes(x = cntry, y = prop, fill = age_group)) +
-  geom_col(position = "dodge") +
-  labs(
-    title = "Relative Distribution of Age Groups by Country",
-    x = "Country",
-    y = "Proportion of Respondents",
-    fill = "Age Group"
-  ) +
-  theme_minimal()
 
 dt_filtered %>% 
   count(cntry, age_group) %>% 
-  group_by(age_group) %>% 
+  group_by(cntry) %>% 
   mutate(prop = n / sum(n) * 100) %>% 
   ggplot(aes(x = age_group, y = prop, fill = cntry)) +
   geom_col(position = "dodge") +
   labs(
-    title = "Relative Distribution of Age Groups by Country",
+    title = "Age Group Distribution Within Each Country",
     x = "Age Group",
     y = "Proportion of Respondents (%)",
     fill = "Country"
