@@ -7,6 +7,7 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 - ⁠Layout überlegen für die einzelnen Pages
 - CSS file
 - Final Dataset festlegen -> filtered? oder lasso?
+- Descriptive Plots mit richtiger Codierung/ Scale versehen
 
 *Für die Models*
 - Verteilung checken für Form in der Regression (e.g. Log, U-shape)
