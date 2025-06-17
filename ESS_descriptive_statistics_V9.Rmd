@@ -1057,6 +1057,8 @@ cor(dt_cor, use = "pairwise.complete.obs")
 ## Baseline Linear Model with all Variables as Predictors
 
 ```{r}
+options(scipen = 999)
+
 model1 <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + year + age_group + cntry,
              data = dt_filtered)
 summary(model1)
