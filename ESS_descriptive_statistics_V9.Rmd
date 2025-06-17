@@ -470,6 +470,13 @@ dt_filtered %>%
   theme_minimal()
 ```
 
+-   highest mean trust in EU among people younger than 18 in all three
+    countries, with respondents from Germany having the highest trust
+-   general downward trend in meant trust in EU across all countries up
+    to the age group 55-64
+-   trust increases again for respondents being 65 or older
+
+
 ## Distribution of Age Groups
 
 ```{r}
@@ -507,42 +514,6 @@ dt_filtered %>%
 -   Among all countries, the age group "65+" has the highest share
 -   Age distribution has an upward trend in all three countries,
     indicating an aging population
-
-## Average Trust in EU by Age Group and Country
-
-```{r}
-dt_filtered %>%
-  group_by(cntry, age_group) %>%
-  summarise(mean_trustEU = mean(trstep, na.rm = TRUE), .groups = "drop") %>%
-  ggplot(aes(x = age_group, y = mean_trustEU, fill = cntry)) +
-  geom_col(position = "dodge") +
-  scale_fill_manual(
-    values = c(
-      "DE" = "#33658a",     # Germany - Blue
-      "PL" = "#f6ae2d",     # Poland - Light Orange
-      "SI" = "#f26419"      # Slovenia - Dark Orange/Pink
-    ),
-    labels = c(
-      "DE" = "Germany",
-      "PL" = "Poland",
-      "SI" = "Slovenia"
-    )
-  ) +
-  labs(
-    title = "Average Trust in EU by Age Group and Country",
-    x = "Age Group",
-    y = "Mean Trust in EU",
-    fill = "Country"
-  ) +
-  theme_minimal()
-
-```
-
--   highest mean trust in EU among people younger than 18 in all three
-    countries, with respondents from Germany having the highest trust
--   general downward trend in meant trust in EU across all countries up
-    to the age group 55-64
--   trust increases again for respondents being 65 or older
 
 
 ## Left-Right Political Placement across Countries - Also not one of our predictors
