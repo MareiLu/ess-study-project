@@ -461,6 +461,20 @@ dt_filtered %>%
   ) +
   theme_minimal()
 
+dt_filtered %>% 
+  count(cntry, age_group) %>% 
+  group_by(age_group) %>% 
+  mutate(prop = n / sum(n) * 100) %>% 
+  ggplot(aes(x = age_group, y = prop, fill = cntry)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Relative Distribution of Age Groups by Country",
+    x = "Age Group",
+    y = "Proportion of Respondents (%)",
+    fill = "Country"
+  ) +
+  theme_minimal()
+
 ```
 
 -   Among all countries, the age group "65+" has the highest share
