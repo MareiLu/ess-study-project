@@ -86,13 +86,13 @@ dt_all <- dt_raw %>%
     polintr_rev = 5 - polintr  # higher = more interested  
     ) %>%
   mutate(
-    freehms_rev = 5 - freehms  # higher = more agreed
+    freehms_rev = 6 - freehms  # higher = more agreed
     ) %>%
   mutate(
-    rlgatnd_rev = 7- rlgatnd   # higher = more often
+    rlgatnd_rev = 8- rlgatnd   # higher = more often
   ) %>%
   mutate(
-    health_rev = 5 - health    # higher = better
+    health_rev = 6 - health    # higher = better
   ) %>%
   mutate(year = case_when(    # Mapping ESS round to the year they were conducted in in "year"
     essround == 1 ~ 2002,
@@ -263,15 +263,18 @@ nowadays), **trstlgl** (Trust in the legal system), **imwbcnt**
 
 *Nochmal überarbeiten*
 Our hypothesis: Dependend on country, Gender and Age and differing by
-Year... ...the more politically interested and the more left on the
-political scale one is, the more they trust the European Parliament.
-...the more open towards other people one is, the more one trusts the
-EU. ...the more satisfied one is with the state of their own county
-nowadays, the more one trusts in the EP.
+Year... 
 
--   Political attitudes: clsprty, euftf, stfgov, trstlgl
--   Ideology: ppltrst, freehms, imwbcnt, rlgatnd
--   Socio-demographics: stfedu, stfhlth, gndr, age_group
+ ...the more satisfied one is with the state of their own county nowadays, the more one trusts in the EP.
+
+...the more open towards other people one is, the more one trusts the EU.
+
+...people who want the European unification to go even further, also trust more in the EU.
+
+
+-   Political attitudes: stfedu, stfhlth, euftf, stfgov, trstlgl
+-   Ideology: ppltrst, imwbcnt, rlgatnd_rev
+-   Socio-demographics: gndr, age_group
 -   Other: cntry, year
 
 
