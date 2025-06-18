@@ -1065,14 +1065,15 @@ summary(model1)
 
 ```
 
-### Interpretation - Ab hier weiter in Interpretationen
+### Interpretation 
 
 **Model Overview**
 
 -   **Dependent variable**: `trstep` – trust in the EU (0–10 scale)
--   **N** = 37,297 (after removing 17,244 rows with missing values)
--   **R² = 0.364** – The model explains \~36% of the variation in EU
+-   **N** = 38,159 (after removing 16,368 rows with missing values)
+-   **R² = 0.3612** – The model explains \~36% of the variation in EU
     trust, which is quite good for social science research
+-   **Adjusted R²** = 0.361 → Shows good explanatory power with minimal overfitting
 -   **Residual SE = 1.98** – The typical prediction error is about 2
     points on a 0–10 scale
 -   **Country controls (`cntry`)** are included, with Germany as the
@@ -1085,19 +1086,21 @@ summary(model1)
 -   **`trstlgl` (+0.29)**: Trust in the legal system is the **strongest
     predictor** of EU trust. A one-unit increase is associated with a
     **0.29-point increase** in EU trust.
--   **`euftf` (+0.21)**: Stronger support for European unification
-    correlates with significantly higher trust in the EU.
 -   **`stfgov` (+0.15)**: Satisfaction with national government
     substantially boosts trust in the EU.
 -   **`stfedu` (+0.06)** and **`stfhlth` (+0.04)**: Satisfaction with
     education and healthcare modestly increase EU trust.
+    
+*Ideology*
+
+-   **`euftf` (+0.21)**: Stronger support for European unification
+    correlates with significantly higher trust in the EU.
 -   **`ppltrst` (+0.05)**: Greater interpersonal trust is positively
     associated with EU trust.
--   **`freehms` (−0.10)**: Belief that homosexuals are not free in
-    society slightly **reduces** EU trust (higher scores = more
-    disagreement with the statement that homosexuals are free).
 -   **`imwbcnt` (+0.07)**: Positive attitudes toward immigrants are
     associated with increased EU trust.
+-   **`rlgatnd_rev` (ns)**: Religious attendance is **not significantly**
+    related to EU trust.
 
 *Demographics*
 
@@ -1105,8 +1108,6 @@ summary(model1)
     **higher** trust in the EU.
 -   **`age_group` (−0.13)**: Older age groups tend to trust the EU
     **less**.
--   **`rlgatnd` (ns)**: Religious attendance is **not significantly**
-    related to EU trust.
 
 *Time Trend*
 
@@ -1120,10 +1121,10 @@ summary(model1)
 -   **`cntrySI` (+0.77)**: Respondents in **Slovenia** also have
     **higher** trust in the EU than Germans.
 
-*People who trust others, trust their legal system, support further EU
+People who trust others, trust their legal system, support further EU
 unification, and are satisfied with their national institutions
 (especially government) tend to trust the EU more. Trust is higher in
-Poland and Slovenia than Germany, and has declined slightly over time.*
+Poland and Slovenia than Germany, and has declined slightly over time.
 
 ##Separate Models per Country for Comparison This avoids running
 regressions with interactions, that give long outputs that are hard to
@@ -1133,19 +1134,25 @@ interpret.
 ### Baseline Linear Model for Poland
 
 ```{r}
-model_PL <- lm(trstep, ppltrst, euftf, stfedu, stfgov, stfhlth, trstlgl, imwbcnt, rlgatnd_rev, gndr, agea,
+model_PL <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + year + age_group,
                data = filter(dt_filtered, cntry == "PL"))
 
 summary(model_PL)
 ```
 
+**Model Overview**
+-   N = 9,088 respondents from Poland
+-   R² = 0.292 → The model explains 29.2% of the variance in trust in the European Parliament
+-   Residual Std. Error = 2.158 → Slightly higher error than in the full model
+
+**Main Findings**
 -   stfedu are not statistically significant
 -   trstlgl, euftf, clsprty and gender are strongest predictors
 
 ### Baseline Linear Model for Slovenia
 
 ```{r}
-model_SI <- lm(trstep ~ ppltrst + euftf + freehms + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd + gndr + year + clsprty + age_group, 
+model_SI <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + year + age_group, 
                data = filter(dt_filtered, cntry == "SI"))
 
 summary(model_SI)
@@ -1157,7 +1164,7 @@ predictors
 ### Baseline Linear Model for Germany
 
 ```{r}
-model_DE <- lm(trstep, ppltrst, euftf, stfedu, stfgov, stfhlth, trstlgl, imwbcnt, rlgatnd_rev, gndr, agea, 
+model_DE <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + year + age_group,
                data = filter(dt_filtered, cntry == "DE"))
 
 summary(model_DE)
@@ -1175,7 +1182,7 @@ Poland and Slovenia, compared to the reference country Germany
 (baseline).
 
 ```{r}
-model2 <- lm(trstep ~ (ppltrst, euftf, stfedu, stfgov, stfhlth, trstlgl, imwbcnt, rlgatnd_rev, gndr, agea, cntry) * cntry,
+model2 <- lm(trstep ~ (ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + year + age_group) * cntry,
              data = dt_filtered)
 
 summary(model2)
