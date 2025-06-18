@@ -31,6 +31,34 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 
  *Fragen*
 - Do we only work with the variables from LASSO or can we use some other variables for our visualizations to get some insights from them, such as Left-Right-Scale
+   - überlegen pb es in der Sotry Sinn macht, bringt es was, das zu sehen für die Frage
+   - könnten sonst auch LASSO Model anpassen mit zusätzlicher Variable
+   - Begründung: wir denken sie ist wichtig, LASSO gibt nur die statistische Wichtigkeit, keine thematische
+
+- Should we test different models?
+   - R2 oder MSE zur Rechtfertigung
+   - fixed effects model: erklären
+   - regression ohne intercept laufen lassen
+   - welches Jahr, welches Land Baseline
+   - wir wollen keine rediction, sondern eher Causal Effect
+   - LASSO Model und ein Model mit usnerern Variablen und dann schauen was EInfluss hat n ddas genauer interpretieren
+   - Age könnte quadratischen Effekt, den man mit reinnehmen könnte, reinnehmen und Signifikanz testen
+ 
+- Should we have a code for the assumptions?
+   - Homoscedasticity könnte getestet werden, für unseren Kontext nicht so wichtig
+   - Q-Q Plots wenn man denkt dass eine Variable logarithmisch skaliert ist
+   - wir könnten Histogram machen, wo man für die einzelnen Variablen auswählen kann ob sie normalverteilt sind oder starke Ausreißer haben
+ 
+- Remarks: Story ist wichtig
+   - die Story die wir erzöhlen wollen ist wichtig, Unterschiede zwischen ländern herausheben, Hauptunterschiede, was sorgt für die Unterschiede, Wo könnte man darauf ansetzen in den jeweiligen Ländern
+
+- Visualisierungen
+   - Sachen im Zeitverlauf anschauen
+
+- Report
+   - Report ist wie eine Art Anleitung für das Dashboard
+   - Wenn wir interessante Patterns haben (z.B. für Polen), dann können wir die auch erklären und auch in der Präsi mit einbeziehen
+   - am Ende Outlooks/Implikationen geben
 
 # Chatty Models
 1. Sinnvolle Interaktionen
