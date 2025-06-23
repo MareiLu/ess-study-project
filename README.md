@@ -3,11 +3,16 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 
 # To Do:
 *Dashboard*
-- App Grundstruktur
-- ⁠Layout überlegen für die einzelnen Pages
-- CSS file
-- Final Dataset festlegen -> filtered? oder lasso?
-- Descriptive Plots mit richtiger Codierung/ Scale versehen
+- About -> erledigt
+  - Texte vervollständigen
+  - Bild
+- Trust in EU
+  - Texte
+  - Grafiken mit richtiger Skalierung -> erledigt
+- Political Context (in den einzelnen Ländern; zusätzliche Informationen)
+- Insights (Unsere Variablen, mit input, nach Ländern getrennt; Descriptives)
+- Implications (Models)
+- Future ?
 
 *Für die Models*
 - Verteilung checken für Form in der Regression (e.g. Log, U-shape)
