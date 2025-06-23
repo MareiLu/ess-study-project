@@ -45,9 +45,9 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
    - Age könnte quadratischen Effekt, den man mit reinnehmen könnte, reinnehmen und Signifikanz testen: Age hat quadratischen effekt, statistically significant
  
 - Should we have a code for the assumptions?
-   - Homoscedasticity könnte getestet werden, für unseren Kontext nicht so wichtig
-   - Q-Q Plots wenn man denkt dass eine Variable logarithmisch skaliert ist
-   - wir könnten Histogram machen, wo man für die einzelnen Variablen auswählen kann ob sie normalverteilt sind oder starke Ausreißer haben
+   - Homoscedasticity könnte getestet werden, für unseren Kontext nicht so wichtig --> Ordinary Least Squares (OLS) estimates of the coefficients are still unbiased and consistent — they don't systematically over- or underestimate the true effect
+   - Q-Q Plots wenn man denkt dass eine Variable logarithmisch skaliert ist: höchstens income, haben wir aber nicht im Model
+   - wir könnten Histogram machen, wo man für die einzelnen Variablen auswählen kann ob sie normalverteilt sind oder starke Ausreißer haben: wir könnten bar plots machen um frequencies anzuschauen und zu überprüfen, ob es Ausreißer gibt, aber das haben wir ja eigentlich in den Descriptives schon gemacht
  
 - Remarks: Story ist wichtig
    - die Story die wir erzöhlen wollen ist wichtig, Unterschiede zwischen ländern herausheben, Hauptunterschiede, was sorgt für die Unterschiede, Wo könnte man darauf ansetzen in den jeweiligen Ländern
