@@ -39,10 +39,10 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
    - R2 oder MSE zur Rechtfertigung
    - fixed effects model: erklären
    - regression ohne intercept laufen lassen
-   - welches Jahr, welches Land Baseline
+   - welches Jahr, welches Land Baseline: Jahr ist continuous, Land DE
    - wir wollen keine rediction, sondern eher Causal Effect
    - LASSO Model und ein Model mit usnerern Variablen und dann schauen was EInfluss hat n ddas genauer interpretieren
-   - Age könnte quadratischen Effekt, den man mit reinnehmen könnte, reinnehmen und Signifikanz testen
+   - Age könnte quadratischen Effekt, den man mit reinnehmen könnte, reinnehmen und Signifikanz testen: Age hat quadratischen effekt, statistically significant
  
 - Should we have a code for the assumptions?
    - Homoscedasticity könnte getestet werden, für unseren Kontext nicht so wichtig
