@@ -51,6 +51,7 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
  
 - Should we have a code for the assumptions?
    - Homoscedasticity könnte getestet werden, für unseren Kontext nicht so wichtig --> Ordinary Least Squares (OLS) estimates of the coefficients are still unbiased and consistent — they don't systematically over- or underestimate the true effect
+   - Robust standard errors are easy to apply --> You can use robust (heteroskedasticity-consistent) standard errors to correct for any distortions in standard errors without having to test for heteroskedasticity explicitly
    - Q-Q Plots wenn man denkt dass eine Variable logarithmisch skaliert ist: höchstens income, haben wir aber nicht im Model
    - wir könnten Histogram machen, wo man für die einzelnen Variablen auswählen kann ob sie normalverteilt sind oder starke Ausreißer haben: wir könnten bar plots machen um frequencies anzuschauen und zu überprüfen, ob es Ausreißer gibt, aber das haben wir ja eigentlich in den Descriptives schon gemacht
  
