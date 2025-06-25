@@ -14,8 +14,10 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
     - Satisfaction with National government
     - Satisfaction with State of education
     - Trust in legal system
-    - Political Interest (Graph erstellen)
     - voting behavior
+    - trust in politicians (rausgenommen)
+    - Unification Progress Satisfatcion
+    - satisfaction with state of health
   - *Socio-Demograohics*
     -   Gender
     -   Age Group
@@ -23,8 +25,8 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
   - *Ideology*
     - Attitudes towards Immigraants
     - Trust in People
-    - Unification Progress Satisfatcion
     - Attendance of religious services
+    - Political Interest (Graph erstellen)
 - Cross-country comparisons (Models)
    - interaction von country mit allen Variablen im Model als Drop-down
 - Implications
