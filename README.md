@@ -7,10 +7,28 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
   - Texte vervollständigen & Bild
 - Trust in EU -> erledigt. Lediglich evtl politische events googlen die zu drops hätten führen können.
   - Texte & Grafiken mit richtiger Skalierung 
-- Political Context (in den einzelnen Ländern; zusätzliche Informationen)
-- Insights (Unsere Variablen, mit input, nach Ländern getrennt; Descriptives)
-- Implications (Models)
-- Future ?
+- Political Context (in den einzelnen Ländern; zusätzliche Informationen): key events, bisschen background information, vlt. left right scale
+  - Graph: Left-Right Political Placement across Countries
+- Insights (Unsere Variablen, mit input, nach Grupperung getrennt, evtl. mit Mneü für age group, year, gender; Descriptives)
+  - *Political Attitudes*
+    - Satisfaction with National government
+    - Satisfaction with State of education
+    - Trust in legal system
+    - Political Interest (Graph erstellen)
+  - *Socio-Demograohics*
+    -   Gender
+    -   Age Group
+    -   Education Years (unterer graph, bar plot)
+  - *Ideology*
+    - Attitudes towards Immigraants
+    - Trust in People
+    - Unification Progress Satisfatcion
+    - Attendance of religious services
+- Cross-country comparisons (Models)
+   - interaction von country mit allen Variablen im Model als Drop-down
+- Implications
+
+- 
   
 *Für die Models*
 - Verteilung checken für Form in der Regression (e.g. Log, U-shape)
