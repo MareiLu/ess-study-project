@@ -26,6 +26,7 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
     - Political Interest 
 - Cross-country comparisons (Models)
    - interaction von country mit allen Variablen im Model als Drop-down
+   - Titel und Label der x-Achse müsste jeweils geändert werden  
 - Implications
 
 - 
