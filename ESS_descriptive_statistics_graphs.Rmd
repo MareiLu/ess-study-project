@@ -1,0 +1,629 @@
+---
+title: "Project Study"
+author: "Marei Göbelbecker & Helena Zappe"
+date: "`r Sys.Date()`"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+
+
+# Visualization
+## Trust in EU - Dependent Variable
+### Trust in EU over Time for all three Countries
+
+```{r}
+
+# Summarize mean trust per country and year
+trust_trends <- dt_filtered %>%
+  filter(cntry %in% c("DE", "PL", "SI")) %>%
+  group_by(cntry, year) %>%
+  summarise(
+    trust_EU = mean(trstep, na.rm = TRUE),
+    .groups = "drop"
+  ) 
+
+#Reshaping to long format for plotting
+trust_long <- trust_trends %>%
+  pivot_longer(cols = c(trust_EU),
+               names_to = "institution",
+               values_to = "trust")
+
+ggplot(trust_trends, aes(x = year, y = trust_EU, color = cntry)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  scale_color_manual(
+    values = c(
+      "DE" = "#33658a",  # Germany
+      "PL" = "#f6ae2d",  # Poland
+      "SI" = "#f26419"   # Slovenia
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(
+    title = "Trust in the EU Over Time",
+    x = "Year",
+    y = "Mean Trust in EU",
+    color = "Country"
+  ) +
+  theme_minimal()
+
+
+```
+
+-   strong flucutations over time fro all three countries
+-   mean trust in Slovenia peaked in 2006 and was the lowest in 2014
+-   mean trust in Poland peaked in 2002 and was the lowest in 2014
+-   mean trust in Germany peaked in 2023 and was the lowest in 2010
+-   Slovenia shows the highest fluctuations in mean trust in the EU,
+    with a sharp decline between 2006 and 2014
+    
+### Average Trust in EU by Age Group and Country
+
+```{r}
+dt_filtered %>%
+  group_by(cntry, age_group) %>%
+  summarise(mean_trustEU = mean(trstep, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = age_group, y = mean_trustEU, fill = cntry)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(
+    values = c(
+      "DE" = "#33658a",     # Germany - Blue
+      "PL" = "#f6ae2d",     # Poland - Light Orange
+      "SI" = "#f26419"      # Slovenia - Dark Orange/Pink
+    ),
+    labels = c(
+      "DE" = "Germany",
+      "PL" = "Poland",
+      "SI" = "Slovenia"
+    )
+  ) +
+  labs(
+    title = "Average Trust in EU by Age Group and Country",
+    x = "Age Group",
+    y = "Trust in EU (0-10 Scale)",
+    fill = "Country"
+  ) +
+  theme_minimal()
+
+```
+
+-   highest mean trust in EU among people younger than 18 in all three
+    countries, with respondents from Germany having the highest trust
+-   general downward trend in meant trust in EU across all countries up
+    to the age group 55-64
+-   trust increases again for respondents being 65 or older
+    
+## Socio-Demographics
+
+### Distribution of Gender by Country
+
+```{r}
+
+dt_filtered %>%
+  mutate(gndr = as_factor(gndr)) %>%  # convert haven_labelled to factor
+  count(cntry, gndr) %>%
+  group_by(cntry) %>%
+  mutate(prop = n / sum(n) * 100) %>%
+  ggplot(aes(x = cntry, y = prop, fill = gndr)) +
+  geom_col(position = "dodge") +
+    scale_fill_manual(
+    values = c(
+      "1" = "#33658a",   # male - Blue
+      "2" = "#f6ae2d"    # female - Light Orange
+    ),
+    labels = c("1" = "Male", "2" = "Female")
+  ) +
+  labs(
+    title = "Relative Distribution of Gender by Country",
+    x = "Country",
+    y = "Proportion of Respondents",
+    fill = "Gender"
+  ) +
+  theme_minimal()
+
+```
+
+-   distribution among all three countries rather similar around 50% for
+    each gender
+-   Germany has slightly more male respondents
+-   Poland and Slovenia have slightly more female respondents
+-   gap is the highest in Slovenia
+
+
+### Distribution of Age Groups
+
+```{r}
+
+dt_filtered %>% 
+  count(cntry, age_group) %>% 
+  group_by(cntry) %>% 
+  mutate(prop = n / sum(n) * 100) %>% 
+  ggplot(aes(x = age_group, y = prop, fill = cntry)) +
+  geom_col(position = "dodge") +
+    scale_fill_manual(
+    values = c(
+      "DE" = "#33658a",   # Germany - Blue
+      "PL" = "#f6ae2d",   # Poland - Light Orange
+      "SI" = "#f26419"    # Slovenia - Dark Orange/Pink
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(
+    title = "Age Group Distribution Within Each Country",
+    x = "Age Group",
+    y = "Proportion of Respondents (%)",
+    fill = "Country"
+  ) +
+  theme_minimal()
+
+```
+
+-   Among all countries, the age group "65+" has the highest share
+-   Age distribution has an upward trend in all three countries,
+    indicating an aging population
+
+### Years of Education
+
+#### by Country
+
+```{r}
+ggplot(dt_filtered, aes(x = cntry, y = eduyrs_winsor, fill = cntry)) +
+  geom_boxplot() +
+  scale_fill_manual(
+    values = c(
+      "DE" = "#33658a",   # Germany - Blue
+      "PL" = "#f6ae2d",   # Poland - Light Orange
+      "SI" = "#f26419"    # Slovenia - Dark Orange/Pink
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(title = "Education Years by Country",
+       y = "Years of Education", x = "Country")
+
+```
+
+-   we winsorized outliers earlier
+-   highest years of education in Germany
+
+## Political Attitudes
+### Distribution of Voting Behavior 
+
+```{r}
+
+# Filtering to valid left-right scale values
+vote_data <- dt_filtered %>%
+  filter(!is.na(vote)) %>%
+  group_by(cntry, vote) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(cntry) %>%
+  mutate(percentage = count / sum(count) * 100)
+
+
+#Plotting the diverging stacked bar chart
+ggplot(vote_data, aes(x = cntry, y = percentage, fill = factor(vote, levels = rev(0:3)))) +
+  geom_bar(stat = "identity", position = "stack") +
+  coord_flip() +
+  scale_fill_manual(
+    values = c(
+      "1" = "#002060", "2" = "#4A90E2", "3" = "#DDDDDD"
+    ),
+    name = "Voted Last National Election"
+  ) +
+  labs(
+    title = "Distribution of Voting Behavior",
+    x = NULL,
+    y = "Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+```
+
+-   highest proportion of voters in Germany
+-   Slovenia has the highest share of people that did not vote
+
+### Left-Right Political Placement across Countries
+
+```{r}
+
+# Filtering to valid left-right scale values
+lr_data <- dt_filtered %>%
+  filter(!is.na(lrscale)) %>%
+  group_by(cntry, lrscale) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(cntry) %>%
+  mutate(percentage = count / sum(count) * 100)
+
+
+#Plotting the diverging stacked bar chart
+ggplot(lr_data, aes(x = cntry, y = percentage, fill = factor(lrscale, levels = rev(0:10)))) +
+  geom_bar(stat = "identity", position = "stack") +
+  coord_flip() +
+  scale_fill_manual(
+    values = c(
+      "0" = "#00002E", "1" = "#002060", "2" = "#003090", "3" = "#4A90E2",
+      "4" = "#8AB4F8", "5" = "#DDDDDD",
+      "6" = "#FFE399", "7" = "#FFBE5C", "8" = "#FF914D", "9" = "#C23B22", "10" = "#800000"
+    ),
+    name = "Left-Right Scale"
+  ) +
+  labs(
+    title = "Placement on Left-Right Political Scale",
+    x = NULL,
+    y = "Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+```
+
+-   highest share of respondents selected 5 as their political attitude
+-   higher share of respondents in Germany and Slovenia are rather left
+-   higher share of respondents in Poland are rather right
+
+### Satisfaction with National Government
+
+#### by Country over Time on Average
+
+```{r}
+dt_filtered %>%
+  filter(!is.na(stfgov), !is.na(year)) %>%
+  group_by(cntry, year) %>%
+  summarise(mean_stfgov = mean(stfgov, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = year, y = mean_stfgov, color = cntry, group = cntry)) +
+  geom_line(size = 1) +
+  geom_point() +
+    scale_color_manual(
+    values = c(
+      "DE" = "#33658a",  # Germany
+      "PL" = "#f6ae2d",  # Poland
+      "SI" = "#f26419"   # Slovenia
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(
+    title = "Average Satisfaction with National Government Over Time",
+    x = "Year",
+    y = "Satisfaction (0–10 scale)",
+    color = "Country"
+  ) +
+  theme_minimal()
+
+```
+
+Interpretation from other graph with distributions:
+-   satisfation with national government fluctuated over time among all
+    countries
+-   Polish respondents were very dissatisfied in 2020
+-   German respondents were very dissatisfied in 2002
+-   Slovenian respondents were very dissatisfied in 2012
+
+### Satisfaction with State of Education by Country
+
+#### by Country Over Time
+
+```{r}
+
+dt_filtered %>%
+  filter(!is.na(stfgov), !is.na(year)) %>%
+  group_by(cntry, year) %>%
+  summarise(mean_stfedu = mean(stfedu, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = year, y = mean_stfedu, color = cntry, group = cntry)) +
+  geom_line(size = 1) +
+  geom_point() +
+    scale_color_manual(
+    values = c(
+      "DE" = "#33658a",  # Germany
+      "PL" = "#f6ae2d",  # Poland
+      "SI" = "#f26419"   # Slovenia
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(
+    title = "Satisfaction with State of Education by Country and Year",
+    x = "Year",
+    y = "Satisfaction (0–10 scale)",
+    color = "Country"
+  ) +
+  theme_minimal()
+
+```
+
+-   highest satisfaction with education to be seen in Slovenia, followed
+    by Poland and then Germany
+    
+### Satisfaction with the State of Health within Country
+
+#### by Country over Time on Average
+
+```{r}
+dt_filtered %>%
+  filter(!is.na(stfhlth), !is.na(year)) %>%
+  group_by(cntry, year) %>%
+  summarise(mean_stfhlth = mean(stfhlth, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = year, y = mean_stfhlth, color = cntry, group = cntry)) +
+  geom_line(size = 1) +
+  geom_point() +
+      scale_color_manual(
+    values = c(
+      "DE" = "#33658a",  # Germany
+      "PL" = "#f6ae2d",  # Poland
+      "SI" = "#f26419"   # Slovenia
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(
+    title = "Average Satisfaction with State of Health by Country over Time",
+    x = "Year",
+    y = "Satisfaction (0–10 scale)",
+    color = "Country"
+  ) +
+  theme_minimal()
+```
+
+-   Germany peaked around 2016 just above 6, also the highest value
+    among all three countries, but satisfaction declined after that
+-   Polish satisfaction crashed to under 3 in 2020
+-   values from Polish respondents are the lowest among all three
+    countries
+
+### Trust in the Legal System by Country over Time on Average
+
+```{r}
+
+dt_filtered %>%
+  filter(!is.na(trstlgl), !is.na(year)) %>%
+  group_by(cntry, year) %>%
+  summarise(mean_trstlgl = mean(trstlgl, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = year, y = mean_trstlgl, color = cntry, group = cntry)) +
+  geom_line(size = 1) +
+  geom_point() +
+      scale_color_manual(
+    values = c(
+      "DE" = "#33658a",  # Germany
+      "PL" = "#f6ae2d",  # Poland
+      "SI" = "#f26419"   # Slovenia
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(
+    title = "Average Trust in the Legal System by Country over Time",
+    x = "Year",
+    y = "Trust (0–10 scale)",
+    color = "Country"
+  ) +
+  theme_minimal()
+
+```
+
+-   Germany has by far the highest trust in the legal system with a
+    general upward trend
+-   Responses from Poland and Slovenia fluctuate more
+-   strong upward trend in Slovenia since 2014
+-   lowest value in Slovenia with just above 3 in 2010
+-   lowest value in Poland with just above 3 in 2020
+
+### Unification Progress Satisfaction
+
+#### by Country Over Time
+
+```{r}
+
+dt_filtered %>%
+  filter(!is.na(euftf), !is.na(year)) %>%
+  group_by(cntry, year) %>%
+  summarise(mean_euftf = mean(euftf, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = year, y = mean_euftf, color = cntry, group = cntry)) +
+  geom_line(size = 1) +
+  geom_point() +
+      scale_color_manual(
+    values = c(
+      "DE" = "#33658a",  # Germany
+      "PL" = "#f6ae2d",  # Poland
+      "SI" = "#f26419"   # Slovenia
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(
+    title = "Average Satisfaction with Unification by Country and Year",
+    x = "Year",
+    y = "Satisfatction (0–10 scale)",
+    color = "Country"
+  ) +
+  theme_minimal()
+```
+    
+## Ideology
+### Attitudes towards Immigrants
+#### by Age Group and Country
+
+```{r}
+dt_filtered %>%
+  group_by(age_group, cntry) %>%
+  summarise(mean_imwbcnt = mean(imwbcnt, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = age_group, y = mean_imwbcnt, fill = cntry)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(
+    values = c(
+      "DE" = "#33658a",   # Germany
+      "PL" = "#f6ae2d",   # Poland
+      "SI" = "#f26419"    # Slovenia
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(
+    title = "Average Attitudes towards Immigrants by Age Group and Country",
+    x = "Age Group",
+    y = "Attitudes towards Immigrants (0-10 Scale)",
+    fill = "Country"
+  ) +
+  theme_minimal()
+```
+
+-   Polish respondents seem to be more welcoming of immigrants among all
+    age groups
+-   Slovenian respondents seem to be the least welcoming of immigrants
+    among all age groups
+-   this seems to be a contradiction to the distribution of the
+    left-right scale, where a higher share of Polish respondents
+    indicated to be more right, and a higher share of Slovenian
+    respondents indicated to be more left
+-   a boxplot in the next step could help to check for outliers
+-   reasons??
+
+#### by Country over Time --> hier auch nach Altersgruppen filtern
+
+```{r}
+
+dt_filtered %>%
+  filter(!is.na(imwbcnt), !is.na(year)) %>%
+  group_by(cntry, year) %>%
+  summarise(mean_imwbcnt = mean(imwbcnt, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = year, y = mean_imwbcnt, color = cntry, group = cntry)) +
+  geom_line(size = 1) +
+  geom_point() +
+      scale_color_manual(
+    values = c(
+      "DE" = "#33658a",  # Germany
+      "PL" = "#f6ae2d",  # Poland
+      "SI" = "#f26419"   # Slovenia
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(
+    title = "Average Immigration Attitude by Country over Time",
+    x = "Year",
+    y = "Immigration Attitude (0-10 Scale)",
+    color = "Country"
+  ) +
+  theme_minimal()
+```
+
+-   there do not seem to be high outliers for positive immigration
+    attitude among Polish respondents
+-   Why are Polish respondents so welcoming when they are rather right?
+    Would be interesting to see if the respondents who are rather right
+    are also more welcoming, or if the average is high because of the
+    very high immigration attitude among rather left respondents
+
+### Trust in People
+#### by Country over Time on Average
+
+```{r}
+
+dt_filtered %>%
+  filter(!is.na(ppltrst), !is.na(year)) %>%
+  group_by(cntry, year) %>%
+  summarise(mean_ppltrst = mean(ppltrst, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = year, y = mean_ppltrst, color = cntry, group = cntry)) +
+  geom_line(size = 1) +
+  geom_point() +
+      scale_color_manual(
+    values = c(
+      "DE" = "#33658a",  # Germany
+      "PL" = "#f6ae2d",  # Poland
+      "SI" = "#f26419"   # Slovenia
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(
+    title = "Average Trust in People by Country over Time",
+    x = "Year",
+    y = "Trust in People (0-10 Scale)",
+    color = "Country"
+  ) +
+  theme_minimal()
+```
+
+-   lowest trust in people in Poland
+
+### Attendance of Religious Services apart from Special Occasions
+
+#### by Country over Time on Average
+
+```{r}
+dt_filtered %>%
+  filter(!is.na(rlgatnd_rev), !is.na(year)) %>%
+  group_by(cntry, year) %>%
+  summarise(mean_rlgatnd_rev = mean(rlgatnd_rev, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = year, y = mean_rlgatnd_rev, color = cntry, group = cntry)) +
+  geom_line(size = 1) +
+  geom_point() +
+    scale_color_manual(
+    values = c(
+      "DE" = "#33658a",   # Germany - Blue
+      "PL" = "#f6ae2d",   # Poland - Light Orange
+      "SI" = "#f26419"    # Slovenia - Dark Orange/Pink
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(
+    title = "Average Attendance of Religious Services apart from Special Occasions",
+    x = "Year",
+    y = "Frequency (0–7 scale)",
+    color = "Country"
+  ) +
+  theme_minimal()
+```
+
+-   Germany on average the country with the least attendance, followed
+    by Slovenia and then Poland
+-   Poland is by far the country with the highest attendance, even
+    though there is an upward trend that peaked in 2020
+
+
+-   Much higher share of Polish respondents attends religious services
+    more often
+-   Slovenia is somewhat evenly distributed
+-   Germany has the highest shares of respondnets that never attend
+    religious services throughout all the years
+    
+### Political Interest
+#### by Country over Time on Average --> hier evtl. auch nach Age Groups interessant
+
+```{r}
+
+# Summarize mean interest per country and year
+interest_trends <- dt_filtered %>%
+  filter(cntry %in% c("DE", "PL", "SI")) %>%
+  group_by(cntry, year) %>%
+  summarise(
+    polintr_rev_mean = mean(polintr_rev, na.rm = TRUE),
+    .groups = "drop"
+  ) 
+
+#Reshaping to long format for plotting
+trust_long <- interest_trends %>%
+  pivot_longer(cols = c(polintr_rev_mean),
+               names_to = "institution",
+               values_to = "interest")
+
+ggplot(interest_trends, aes(x = year, y = polintr_rev_mean, color = cntry)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  scale_color_manual(
+    values = c(
+      "DE" = "#33658a",  # Germany
+      "PL" = "#f6ae2d",  # Poland
+      "SI" = "#f26419"   # Slovenia
+    ),
+    labels = c("DE" = "Germany", "PL" = "Poland", "SI" = "Slovenia")
+  ) +
+  labs(
+    title = "Average Political Interest Over Time",
+    x = "Year",
+    y = "Political Interest (1-4 Scale)",
+    color = "Country"
+  ) +
+  theme_minimal()
+
+```
+
+Interpretation of Graph on Age Groups:
+-   clearly highest trust in politicians in Germany among all age groups
+-   Polish respondents seem to have higher trust than Slovenian
+    respondents in all age groups, except for the group 55-64
+
