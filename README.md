@@ -4,9 +4,9 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 # To Do:
 *Dashboard*
 - Trust in EU -> erledigt. Lediglich evtl politische events googlen die zu drops hätten führen können.
-- Political Context (in den einzelnen Ländern; zusätzliche Informationen): key events, bisschen background information, vlt. Graph zu left right scale
-  - Graph: Left-Right Political Placement across Countries
+- Political Context (in den einzelnen Ländern; zusätzliche Informationen): key events, bisschen background information, vlt. Graph zu left right scale einbeziehen
 - Insights (Unsere Variablen, mit input, nach Grupperung getrennt, evtl. mit Mneü für age group, year, gender; Descriptives)
+    - Key Findings!
   - *Socio-Demograohics*
     - Distribution of Gender
     - Distribution of Age Group
@@ -23,12 +23,11 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
     - Attitudes towards Immigraants
     - Trust in People
     - Attendance of religious services
-    - Political Interest 
+    - Political Interest
 - Cross-country comparisons (Models)
-   - interaction von country mit allen Variablen im Model als Drop-down
+   - interaction von country mit allen Variablen im Model als Drop-down (im menü variablen einzeln)
    - Titel und Label der x-Achse müsste jeweils geändert werden  
 - Implications
-
 - 
   
 *Für die Models*
