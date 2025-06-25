@@ -4,16 +4,14 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 # To Do:
 *Dashboard*
 - About -> erledigt
-  - Texte vervollständigen
-  - Bild
-- Trust in EU
-  - Texte
-  - Grafiken mit richtiger Skalierung -> erledigt
+  - Texte vervollständigen & Bild
+- Trust in EU -> erledigt. Lediglich evtl politische events googlen die zu drops hätten führen können.
+  - Texte & Grafiken mit richtiger Skalierung 
 - Political Context (in den einzelnen Ländern; zusätzliche Informationen)
 - Insights (Unsere Variablen, mit input, nach Ländern getrennt; Descriptives)
 - Implications (Models)
 - Future ?
-
+  
 *Für die Models*
 - Verteilung checken für Form in der Regression (e.g. Log, U-shape)
 - Multicollinearity checken
