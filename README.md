@@ -3,10 +3,7 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 
 # To Do:
 *Dashboard*
-- About -> erledigt
-  - Texte vervollständigen & Bild
 - Trust in EU -> erledigt. Lediglich evtl politische events googlen die zu drops hätten führen können.
-  - Texte & Grafiken mit richtiger Skalierung 
 - Political Context (in den einzelnen Ländern; zusätzliche Informationen): key events, bisschen background information, vlt. Graph zu left right scale
   - Graph: Left-Right Political Placement across Countries
 - Insights (Unsere Variablen, mit input, nach Grupperung getrennt, evtl. mit Mneü für age group, year, gender; Descriptives)
