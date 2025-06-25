@@ -15,6 +15,7 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
     - Satisfaction with State of education
     - Trust in legal system
     - Political Interest (Graph erstellen)
+    - voting behavior
   - *Socio-Demograohics*
     -   Gender
     -   Age Group
