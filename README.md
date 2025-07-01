@@ -5,12 +5,12 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 *Dashboard*
 - Trust in EU -> erledigt. Lediglich evtl politische events googlen die zu drops hätten führen können.
 - Political Context (in den einzelnen Ländern; zusätzliche Informationen): key events, bisschen background information, vlt. Graph zu left right scale einbeziehen
-- Insights (Unsere Variablen, mit input, nach Grupperung getrennt, evtl. mit Mneü für age group, year, gender; Descriptives)
-    - Key Findings!
-  - 
+
 - Cross-country comparisons (Models)
    - interaction von country mit allen Variablen im Model als Drop-down (im menü variablen einzeln)
-   - Titel und Label der x-Achse müsste jeweils geändert werden  
+         - Alle Variablen oder nur die vier?
+         -> Begründung warum wir die vier ausgewählt haben!
+  
 - Implications
 - 
   
