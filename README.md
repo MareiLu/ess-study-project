@@ -7,23 +7,7 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 - Political Context (in den einzelnen Ländern; zusätzliche Informationen): key events, bisschen background information, vlt. Graph zu left right scale einbeziehen
 - Insights (Unsere Variablen, mit input, nach Grupperung getrennt, evtl. mit Mneü für age group, year, gender; Descriptives)
     - Key Findings!
-  - *Socio-Demograohics*
-    - Distribution of Gender
-    - Distribution of Age Group
-    - Education Years (unterer graph, bar plot)
-  - *Political Attitudes*
-    - Distribution of voting behavior
-    - trust in politicians (rausgenommen)
-    - Satisfaction with National government
-    - Satisfaction with State of education
-    - Satisfaction with State of Health
-    - Trust in legal system
-    - Unification Progress Satisfaction
-  - *Ideology*
-    - Attitudes towards Immigraants
-    - Trust in People
-    - Attendance of religious services
-    - Political Interest
+  - 
 - Cross-country comparisons (Models)
    - interaction von country mit allen Variablen im Model als Drop-down (im menü variablen einzeln)
    - Titel und Label der x-Achse müsste jeweils geändert werden  
@@ -82,29 +66,27 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
    - Wenn wir interessante Patterns haben (z.B. für Polen), dann können wir die auch erklären und auch in der Präsi mit einbeziehen
    - am Ende Outlooks/Implikationen geben
 
+# Variablen
+*Socio-Demograohics*
+    - Distribution of Gender
+    - Distribution of Age Group
+    - Education Years (unterer graph, bar plot)
+  - *Political Attitudes*
+    - Distribution of voting behavior
+    - trust in politicians (rausgenommen)
+    - Satisfaction with National government
+    - Satisfaction with State of education
+    - Satisfaction with State of Health
+    - Trust in legal system
+    - Unification Progress Satisfaction
+  - *Ideology*
+    - Attitudes towards Immigraants
+    - Trust in People
+    - Attendance of religious services
+    - Political Interest
+
 # Chatty Models
-1. Sinnvolle Interaktionen
-Interaktionen prüfen, wenn du erwartest, dass der Effekt eines Prädiktors nicht für alle Gruppen gleich ist. Beispiele:
 
-2. Modellspezifikation nach Gruppen
-Gruppenmodelle sind sinnvoll, wenn sich die ganze Struktur der Zusammenhänge je nach Land oder Altersgruppe unterscheiden könnte.
-
-Beispiel: ein Modell getrennt nach Land:
-library(broom)
-dt_filtered %>%
-  group_by(cntry) %>%
-  do(tidy(lm(trstep ~ ppltrst + euftf + stfgov + clsprty + age_group + gndr, data = .)))
-
-Alternativ:
-library(modelsummary)
-models <- dt_filtered %>%
-  group_split(cntry) %>%
-  map(~ lm(trstep ~ ppltrst + euftf + stfgov + age_group + clsprty, data = .))
-
-modelsummary(models, gof_omit = "IC|Log|Adj")
-
-🔹 3. Transformationen prüfen
-Am wichtigsten bei schiefen metrischen Prädiktoren (nicht bei Faktoren). Du könntest z. B.:
 
 # Histogramm oder Dichte ansehen
 ggplot(dt_filtered, aes(x = ppltrst)) + geom_histogram(bins = 30)
