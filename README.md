@@ -2,6 +2,9 @@
 What shapes trust in the European Union and United Nations in Poland, Germany and Slovenia? A comparative Analysis of political attitudes, ideology and socio-demographics over time.
 
 # To Do:
+*Notizen zu Dashboard*
+- Key Interaction Effects: Change to Attitudes towards EU unification
+
 *Dashboard*
 - Trust in EU -> erledigt. Lediglich evtl politische events googlen die zu drops hätten führen können.
 - Political Context (in den einzelnen Ländern; zusätzliche Informationen): key events, bisschen background information, vlt. Graph zu left right scale einbeziehen
