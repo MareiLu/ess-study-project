@@ -7,6 +7,10 @@ library(here)
 library(tidyverse)
 library(broom)
 library(forcats)
+library(interactions)
+library(shinyWidgets)
+library(ggcorrplot)
+library(rlang)
 
 #library(skimr)       
 #library(psych)       
@@ -137,12 +141,10 @@ grouped_choices <- lapply(category_vars, function(vars) {
 # Combine: ungrouped main_var first, then the grouped ones
 final_choices <- c(main_var, grouped_choices)
 
-#named_choices <- setNames(names(var_labels), var_labels)
-
-
 # Defining List shortcut
 ul <- tags$ul
 li <- tags$li
+
 
 # ----------- SECTION: UI DEFINITION -------------
 
@@ -194,7 +196,7 @@ server <- function(input, output) {
   output$tabContent <- renderUI({
     switch(input$tabs,
            
-       # ----------- SERVER LOGIC: ABOUT TAB ------------
+        # ---------- SERVER LOGIC: ABOUT TAB ------------
 
        # About
        "about" = tagList(
@@ -465,7 +467,7 @@ Use the dropdown menu to explore different interaction effects and understand ho
               #   )),
              div(class = "full-width-box",
                  #h3("Heatmap: Regression Coefficients by Country and Variable Group"),
-                 plotOutput("coef_heatmap", click = "heatmap_click", height = "500px"),
+                 plotOutput("coef_heatmap", click = "heatmap_click", height = "750px"),
                  h4(uiOutput("selected_var_label")),
                  div(style = "text-align: center; padding-top: 10px;",
                      div(style = "display: inline-block; max-width: 600px;",
@@ -911,24 +913,22 @@ Use the dropdown menu to explore different interaction effects and understand ho
 # ----------- OUTPUT LOGIC: COMPARISON TAB ---------------
   
 # Cross-Country Comparison
+  
+  # Country-Specific Models
   # Model_DE
   modelDE <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + as.factor(year) + age_group + lrscale + polintr_rev + eduyrs_winsor,
-                 data = subset(dt_filtered, cntry == "DE"))
+                data = subset(dt_filtered, cntry == "DE"))
+  tidyDE <- tidy(modelDE)
   
   # Model_PL
   modelPL <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + as.factor(year) + age_group + lrscale + polintr_rev + eduyrs_winsor,
-                 data = subset(dt_filtered, cntry == "PL"))
+                data = subset(dt_filtered, cntry == "PL"))
+  tidyPL <- tidy(modelPL)
   
   # Model_SI
   modelSI <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + as.factor(year) + age_group + lrscale + polintr_rev + eduyrs_winsor,
-                 data = subset(dt_filtered, cntry == "SI"))
-  
-  library(broom)
-  
-  tidyDE <- tidy(modelDE)
-  tidyPL <- tidy(modelPL)
+                data = subset(dt_filtered, cntry == "SI"))
   tidySI <- tidy(modelSI)
-  
   
   # Neuer Plot
   get_model_coef <- function(data, country_name) {
@@ -941,13 +941,13 @@ Use the dropdown menu to explore different interaction effects and understand ho
       filter(term != "(Intercept)") %>%
       mutate(
         country = country_name,
-        term = case_when(
-          grepl("as.factor\\(year\\)", term) ~ paste0("Year: ", gsub("as.factor\\(year\\)", "", term)),
+        term_clean = case_when(
+          grepl("^as\\.factor\\(year\\)", term) ~ paste0("Year: ", gsub("as.factor\\(year\\)", "", term)),
           term %in% names(var_labels) ~ var_labels[term],
           TRUE ~ term
-        )
-      )
+        ))
   }
+  
   
   # globales data_heatmap für Zugriff in der Tabelle
   data_heatmap <- reactive({
@@ -957,22 +957,29 @@ Use the dropdown menu to explore different interaction effects and understand ho
       get_model_coef(dt_filtered, "SI")
     )
     
+    # Gruppenzuweisung vorbereiten
     temp_category_vars <- category_vars
     names(temp_category_vars)[names(temp_category_vars) == "Socio-Demographics"] <- "Socio-\nDemographics"
     
     group_map <- purrr::imap_dfr(temp_category_vars, ~ tibble(term = var_labels[.x], group = .y))
     
+    # Year-Effekte ergänzen
+    year_terms <- unique(coef_all$term_clean[grepl("^Year: ", coef_all$term_clean)])
+    group_map <- bind_rows(
+      group_map,
+      tibble(term = year_terms, group = "Year Effects")
+    )
+    
     coef_all %>%
-      filter(term %in% group_map$term) %>%
-      select(term, estimate, country) %>%
+      filter(term_clean %in% group_map$term) %>%
+      select(term = term_clean, estimate, country) %>%
       left_join(group_map, by = "term") %>%
       mutate(
         term = factor(term, levels = rev(unique(group_map$term))),
-        group = factor(group, levels = names(temp_category_vars))
+        group = factor(group, levels = c(names(temp_category_vars), "Year Effects"))
       )
   })
   
-
     #Plot
   output$coef_heatmap <- renderPlot({
     ggplot(data_heatmap(), aes(x = country, y = term, fill = estimate)) +
@@ -1017,6 +1024,9 @@ output$selected_variable_table <- renderTable({
   
   # Maschinenlesbarer Name
   selected_var <- names(var_labels)[var_labels == nearest_term]
+  if (length(selected_var) == 0 && grepl("^Year: ", nearest_term)) {
+    selected_var <- paste0("as.factor(year)", sub("Year: ", "", nearest_term))
+  }
   req(length(selected_var) == 1)
   
   extract_coef <- function(tidy_df, var_name) {
@@ -1091,7 +1101,7 @@ output$selected_variable_table <- renderTable({
   
   
   #interactionPlot
-  library(interactions)
+  
   
   output$interactionPlot <- renderPlot({
     selected_var <- input$selected_var
@@ -1114,9 +1124,7 @@ output$selected_variable_table <- renderTable({
   
   # Correlation Matrixes
   
-  library(shinyWidgets)
-  library(ggcorrplot)
-  library(rlang)
+  
   
   # Function without labels
   render_cor_plot_nolabels <- function(cntry_var) {
@@ -1227,7 +1235,13 @@ output$selected_variable_table <- renderTable({
   
 }
 
-
+dt_filtered %>%
+  filter(cntry == "DE") %>%  # oder "PL", "SI"
+  group_by(year) %>%
+  summarise(complete_cases = sum(complete.cases(
+    trstep, ppltrst, euftf, stfedu, stfgov, stfhlth, trstlgl,
+    imwbcnt, rlgatnd_rev, gndr, year, age_group, lrscale, polintr_rev, eduyrs_winsor
+  )))
 
 
 
