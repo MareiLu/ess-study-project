@@ -3,27 +3,27 @@
 # install.packages("shiny")
 library(shiny)
 library(haven)
-library(tidyverse)   
-library(skimr)       
-library(psych)       
-library(labelled)
-library(dplyr)
 library(here)
-library(tidyr)
+library(tidyverse)
 library(broom)
-library(gtools)
+library(forcats)
+
+#library(skimr)       
+#library(psych)       
+#library(labelled)
+#library(dplyr)
+#library(tidyr)
+#library(gtools)
 
 
 # Loading the data
 dt_filtered <- read_sav(here("data", "ESS_filtered.sav")) 
 
-# Define age_group as factor
-dt_filtered <- dt_filtered %>%
-  mutate(age_group = factor(
-    age_group,
-    levels = 1:7,
-    labels = c("<18", "18–24", "25–34", "35–44", "45–54", "55–64", "64<")
-  ))
+# ----------- SECTION: GLOBAL SETTINGS -----------
+
+# Colors and Labels for Countries 
+trust_colors <- c("DE"="#003399", "PL"="#FFCC00", "SI"="#FF7300")
+trust_labels <- c("DE"="Germany", "PL"="Poland", "SI"="Slovenia")
 
 # Set global plot theme
 modern_clean_theme <- function(base_size = 14, base_family = "sans") {
@@ -48,43 +48,82 @@ modern_clean_theme <- function(base_size = 14, base_family = "sans") {
     )
 }
 
-# Defining Color Scheme
-trust_colors <- c(
-  "DE" = "#33658a",  # Germany
-  "PL" = "#f6ae2d",  # Poland
-  "SI" = "#f26419"   # Slovenia
-)
+# Function for age grouping
+get_age_group <- function(data) {
+  data %>%
+    mutate(
+      age_group = case_when(
+        agea < 18 ~ "<18",
+        agea >= 18 & agea <= 24 ~ "18–24",
+        agea > 24 & agea <= 34 ~ "25–34",
+        agea > 34 & agea <= 44 ~ "35–44",
+        agea > 44 & agea <= 54 ~ "45–54",
+        agea > 54 & agea <= 64 ~ "55–64",
+        agea > 64 ~ "64<",
+        TRUE ~ NA_character_
+      ),
+      age_group = factor(age_group, levels = c("<18", "18–24", "25–34", "35–44", "45–54", "55–64", "64<"))
+    )
+}
 
-# Defining Country Labels
-trust_labels <- c(
-  "DE" = "Germany",
-  "PL" = "Poland",
-  "SI" = "Slovenia"
-)
+# Function for plot over time
+plot_over_time <- function(var, y_label, title, year_range = NULL) {
+  data <- dt_filtered
+  
+  if (!is.null(year_range) && length(year_range) == 2) {
+    data <- data %>%
+      filter(year >= year_range[1], year <= year_range[2])
+  }
+  
+  data %>%
+    filter(!is.na(.data[[var]]), !is.na(year)) %>%
+    group_by(cntry, year) %>%
+    summarise(mean_val = mean(.data[[var]], na.rm = TRUE), .groups = "drop") %>%
+    ggplot(aes(x = year, y = mean_val, color = cntry, group = cntry)) +
+    geom_line(linewidth = 1) +
+    geom_point() +
+    scale_x_continuous(breaks = seq(min(dt_filtered$year, na.rm = TRUE),
+                                    max(dt_filtered$year, na.rm = TRUE), by = 4)) +
+    scale_color_manual(values = trust_colors, labels = trust_labels) +
+    labs(
+      title = title,
+      x = "Year",
+      y = y_label,
+      color = "Country"
+    ) +
+    modern_clean_theme() +
+    theme(legend.position = "bottom")
+}
+
 
 # Defining the Categories of Variables
 category_vars <- list(
   "Socio-Demographics" = c("age_group", "gndr", "eduyrs_winsor"),
   "Political Attitudes" = c("stfgov", "stfedu", "stfhlth", "trstlgl", "euftf"),
-  "Ideology" = c("imwbcnt", "ppltrst", "rlgatnd_rev", "polintr_rev")
+  "Ideology" = c("imwbcnt", "ppltrst", "rlgatnd_rev", "polintr_rev", "lrscale")
 )
 
 var_labels <- c(
   trstep        = "Trust in the EU",
-  ppltrst       = "Trust in People",
-  euftf         = "Attitude to EU Unification",
+  euftf         = "Attitude towards EU Unification",
   stfedu        = "Satisfaction with State of Education",
   stfgov        = "Satisfaction with National Government",
   stfhlth       = "Satisfaction with State of Health Services ",
   trstlgl       = "Trust in Legal System",
-  imwbcnt       = "Attitude to Immigrants",
+  ppltrst       = "Trust in People",
+  imwbcnt       = "Attitude towards Immigrants",
   rlgatnd_rev   = "Religious Service Attendance",
+  lrscale       = "Left-Right Political Placement",
+  polintr_rev   = "Political Interest",
+  eduyrs_winsor = "Years of Education",
   gndr          = "Gender",
   year          = "Year",
-  age_group     = "Age Group",
-  lrscale       = "Left–Right Scale",
-  polintr_rev   = "Political Interest",
-  eduyrs_winsor = "Years of Education"
+  age_group     = "Age Group"
+)
+
+label_map <- tibble::tibble(
+  term = unname(var_labels),
+  var = names(var_labels)
 )
 
 #Add Trust in EU separately
@@ -105,12 +144,14 @@ final_choices <- c(main_var, grouped_choices)
 ul <- tags$ul
 li <- tags$li
 
+# ----------- SECTION: UI DEFINITION -------------
+
 # Defining the User Interface
 ui <- fluidPage(
   
   # Tagging CSS 
   tags$head(
-    tags$link(rel = "stylesheet", type = "text/css", href = "style.css")
+    tags$link(rel = "stylesheet", type = "text/css", href = "style.css?v=1.1")
   ),
   
   # Define fixed Header
@@ -124,8 +165,8 @@ ui <- fluidPage(
       ),
   
   # Define Tabs in Header
-      div(class = "nav-wrapper",
-          tabsetPanel(id = "tabs", type = "tabs",
+      div(class = "nav-wrapper", 
+          tabsetPanel(id = "tabs", type = "tabs", 
                       tabPanel("About", value = "about"),
                       tabPanel("Trust in EU", value = "trust"),
                       tabPanel("Political Context", value = "context"),
@@ -137,13 +178,15 @@ ui <- fluidPage(
   ),
   
   # Spacing under header so that content is not covered
-  div(style = "height: 190px;"),
+  div(style = "height: 130px;"),
   
   # Content that is displayed depending on the tab
   uiOutput("tabContent")
 )
   
  
+# ----------- SECTION: SERVER LOGIC --------------
+
 
 # Defining the server logic 
 server <- function(input, output) {
@@ -151,6 +194,8 @@ server <- function(input, output) {
   output$tabContent <- renderUI({
     switch(input$tabs,
            
+       # ----------- SERVER LOGIC: ABOUT TAB ------------
+
        # About
        "about" = tagList(
            div(class = "page-section",
@@ -194,6 +239,8 @@ server <- function(input, output) {
               )
            )
        ),
+       
+      # ----------- SERVER LOGIC: TRUST TAB ------------
       
       # Trust in the EU        
       "trust" = tagList(
@@ -222,6 +269,8 @@ server <- function(input, output) {
               p("It is then interesting to look at this aspect in the different ESS rounds. Doing so this general pattern is still visible even though in different magnitudes. We will further investigate this at a later point in the analysis.")
           )
        ),
+      
+      # ----------- SERVER LOGIC: CONTEXT TAB ------------
       
       # Political Context 
        "context"  = tagList(
@@ -274,10 +323,27 @@ server <- function(input, output) {
              ),
              div(class = "full-width-box",
                  plotOutput("votePlot", height = "300px")
+             ),
+             h3("Ideological Distribution Across Age Groups and Years"),
+             ul(
+               li("Poland: Respondents are significantly more right-leaning across all years and age groups. The left-leaning share remains relatively constant, while the right-leaning share increases strongly with age and people shift from the center to the right."),
+               li("Germany: Respondents are generally more left-leaning, especially among younger people. There's a gradual shift toward the right with increasing age, but the pattern is relatively stable over time."),
+               li("Slovenia: There is a polarization trend with age: older people are more likely to identify as either left- or right-leaning, moving away from the center. Younger respondents lean left. However, there is still a balanced distribution between left- and right-leaning people across years."),
+               li("Overall: Younger age groups are more left-leaning across all countries. Respondents aged 65+ tend to be more right-leaning. While there are some year-to-year fluctuations, the general ideological patterns remain stable.")
+             ),
+             
+             h3("Voting Distribution Across Age Groups and Years"),
+             ul(
+               li("Voting participation has increased over time, with the highest voter turnout in Germany across all years."),
+               li("Significant growth in voter turnout since 2018 in all three countries."),
+               li("Older respondents are consistently more politically active, with higher voting rates."),
+               li("Younger respondents vote less frequently, but participation is rising with increasing age.")
              )
-
+       
          )
        ),
+      
+      # ----------- SERVER LOGIC: INSIGHTS TAB ------------
            
        # Insights
        "insights"  = tagList(
@@ -293,6 +359,8 @@ server <- function(input, output) {
              uiOutput("insight_plots")
          )
        ),
+      
+      # ----------- SERVER LOGIC: COMPARISON TAB ------------
         
       # Cross-Country Comparison
        "comparison"  = tagList(
@@ -313,8 +381,7 @@ We estimated a multiple linear regression model that includes all predictor vari
                options = list(
                  `actions-box` = TRUE,
                  `live-search` = TRUE,
-                 `selected-text-format` = "count > 3",
-                 `style` = "btn-light"
+                 `selected-text-format` = "count > 3"
                )
              ),
              
@@ -345,9 +412,7 @@ We estimated a multiple linear regression model that includes all predictor vari
                  
              ),
              
-             p("Across all three countries, the correlations range from -0.1 to 0.5. Moderate correlations are observed between the various satisfaction variables. These include trust in the legal system and satisfaction with the state of health services, the state of education, and the national government. The consistent clustering of these variables across countries suggest that they reflect a general sense of satisfaction with national institutions."),
-             p("In most cases, correlation coefficients do not exceed 0.5, indicating moderate associations. An exception is observed in Slovenia, where satisfaction with education and healthcare services have a correlation of 0.54."),
-             p("Importantly, the correlations between these predictors and trust in the EU are relatively stronger across all three countries. This supports the relevance and empirical justification for including these variables in the regression models.", style = "margin-bottom: 30px;"),
+             p("Across all three countries, the correlations range from -0.1 to 0.5. Moderate correlations are observed between the various satisfaction variables. These include trust in the legal system and satisfaction with the state of health services, the state of education, and the national government. The consistent clustering of these variables across countries suggest that they reflect a general sense of satisfaction with national institutions. In most cases, correlation coefficients do not exceed 0.5, indicating moderate associations. An exception is observed in Slovenia, where satisfaction with education and healthcare services have a correlation of 0.54. Importantly, the correlations between these predictors and trust in the EU are relatively stronger across all three countries. This supports the relevance and empirical justification for including these variables in the regression models.", style = "margin-bottom: 30px;"),
 
  
              h3("Key Interaction Effects"),
@@ -369,7 +434,7 @@ Use the dropdown menu to explore different interaction effects and understand ho
                  fluidRow(
                    # Graph Left
                    column(6,
-                          plotOutput("interactionPlot", height = "300px")), 
+                          plotOutput("interactionPlot", height = "270px")), 
                    # Text right
                    column(6,
                           output$dynamicText <- renderUI({
@@ -385,20 +450,26 @@ Use the dropdown menu to explore different interaction effects and understand ho
              p("Besides the pooled multiple linear regression model including a country interaction, we estimated the same model for each country, leaving out the interaction. The findings of these models let us gain insights into what shapes EU trust in each country, highlighting the most significant predictors. These tables represent the regression output for Slovenia, Poland and Germany.", style = "margin-bottom: 30px;"),
 
              # Fixed Effects Models
+             #div(class = "full-width-box",
+             #    h3("Effects of Variables in each Country"),
+             #    fluidRow(
+             #      column(4,
+             #             h3("Germany"),
+             #             div(style = "font-size: 11px;", tableOutput("Model_DE"))),
+            #       column(4,
+            #              h3("Poland"),
+             #             div(style = "font-size: 11px;", tableOutput("Model_PL"))),
+             #      column(4,
+             #             h3("Slovenia"),
+             #             div(style = "font-size: 11px;", tableOutput("Model_SI"))),
+              #   )),
              div(class = "full-width-box",
-                 h3("Effects of Variables in each Country"),
-                 fluidRow(
-                   column(4,
-                          h3("Germany"),
-                          div(style = "font-size: 11px;", tableOutput("Model_DE"))),
-                   column(4,
-                          h3("Poland"),
-                          div(style = "font-size: 11px;", tableOutput("Model_PL"))),
-                   column(4,
-                          h3("Slovenia"),
-                          div(style = "font-size: 11px;", tableOutput("Model_SI"))),
-                 ),
-                 plotOutput("coefPlot", height = "600px")
+                 #h3("Heatmap: Regression Coefficients by Country and Variable Group"),
+                 plotOutput("coef_heatmap", click = "heatmap_click", height = "500px"),
+                 h4(uiOutput("selected_var_label")),
+                 div(style = "text-align: center; padding-top: 10px;",
+                     div(style = "display: inline-block; max-width: 600px;",
+                         tableOutput("selected_variable_table")))
              ),
              
              h4("Main Effects in Germany"),
@@ -413,23 +484,43 @@ Use the dropdown menu to explore different interaction effects and understand ho
              
          )
        ),
+      
+      # ----------- SERVER LOGIC: IMPLICATION TAB ------------
 
        # Implications
        "implications"  = tagList(
          div(class = "page-section",
              h2("What do the findings imply for the EU?"),
              
-             p("Dummy Text"),
+             p("Our findings reveal that trust in the EU is shaped by an interplay of political attitudes, national institutional trust, ideological factors, and demographic characteristics. While some factors, like trust in the legal system, are consistently influential, others, such as government satisfaction, vary considerably across Slovenia, Poland, and Germany."),
+             p("These results have important implications for EU strategies, national policymakers, and efforts to build public trust. Efforts to foster EU trust must be tailored to specific national contexts and institutional landscapes."),
              
              div(class = "flex-two-boxes",
                  div(class = "box-content",
-                     p("dummy text")
+                     p(strong("Institutional trust is a central driver of EU trust."), "Confidence in the national legal system strongly predicts EU trust. This is particularly true in Poland and Slovenia, suggesting that EU legitimacy is closely linked to national institutional performance, also including the health care system, education system and national government.")
                  ),
                  div(class = "box-content",
-                     p("dummy text")
+                     p(strong("National satisfaction and EU trust can either reinforce or substitute each other."), "Higher satisfaction with the national government tends to increase EU trust in Slovenia and particularly Germany. However, the opposite effect is observed in Poland, where greater satisfaction with the national government correlates with lower EU trust. This suggests a competitive dynamic between the EU and the national government, in which citizens place trust in either the national government or the EU, but not both.")
+                 )
+             ),
+             
+             div(class = "flex-two-boxes",
+                 div(class = "box-content",
+                     p(strong("Political ideology influences EU trust but varies across countries."), "In Germany and Poland, individuals with right-leaning political views tend to trust the EU less, consistent with common narratives of right-wing parties. In contrast, right-leaning individuals in Slovenia tend to have more trust in the EU. This highlights how national political contexts and parties’ narratives shape perceptions of the EU.")
+                 ),
+                 div(class = "box-content",
+                     p(strong("Gender plays a consistent role in shaping EU trust."), "In all three countries, women tend to place higher trust in the EU, with the effect being strongest in Germany. This suggests gender-related attributes, with women perceiving the EU as a guarantor of security, rights, and stability.")
+                 )
+             ),
+             
+             div(class = "flex-two-boxes",
+                 div(class = "box-content",
+                     p(strong("Age and education show varying effects."), "Age consistently shows significant but country-specific effects. Older citizens in Poland tend to be more trusting, whereas in Germany and Slovenia, they are less trusting in the EU. This hints at generational divides in EU sentiment. Education, by contrast, is not a significant predictor in any of the countries, suggesting that EU trust is influenced more by political and institutional factors than by educational attainment.")
+                 ),
+                 div(class = "box-content",
+                     p(strong("Temporal dynamics reflect shared and country-specific shocks."), "Declines in trust in the EU between 2014 and 2016 across all countries may be linked to broader EU crises such as the migration crisis and Brexit. However, Poland’s decline in 2020 and 2022 or Slovenia’s drop in 2018 suggest that domestic political or institutional events also play a key role in shaping EU trust.")
                  )
              )
-             
              
          )
        )
@@ -437,6 +528,8 @@ Use the dropdown menu to explore different interaction effects and understand ho
     )
   })
 
+  
+# ----------- OUTPUT LOGIC: TRUST TAB ------------------  
   
 # Trust in EU: 
   # euTrustPlot 
@@ -467,21 +560,8 @@ Use the dropdown menu to explore different interaction effects and understand ho
     req(input$selected_year)
     
     dt_filtered %>%
-      # Nur filtern, wenn ein bestimmtes Jahr ausgewählt wurde
       { if (input$selected_year != "all") filter(., year == input$selected_year) else . } %>%
-      mutate(
-        age_group = case_when(
-          agea < 18 ~ "<18",
-          agea >= 18 & agea <= 24 ~ "18–24",
-          agea > 24 & agea <= 34 ~ "25–34",
-          agea > 34 & agea <= 44 ~ "35–44",
-          agea > 44 & agea <= 54 ~ "45–54",
-          agea > 54 & agea <= 64 ~ "55–64",
-          agea > 64 ~ "64<",
-          TRUE ~ NA_character_
-        ),
-        age_group = factor(age_group, levels = c("<18", "18–24", "25–34", "35–44", "45–54", "55–64", "64<"))
-      ) %>%
+      get_age_group(.) %>%   # <- das ist korrekt
       filter(!is.na(age_group)) %>%
       group_by(age_group, cntry) %>%
       summarise(trstep = mean(trstep, na.rm = TRUE), .groups = "drop") %>%
@@ -500,11 +580,14 @@ Use the dropdown menu to explore different interaction effects and understand ho
       ) +
       modern_clean_theme()
   })
+
+# ----------- OUTPUT LOGIC: CONTEXT TAB ----------------
   
 # Context:
   # lrscalePlot
   output$lrscalePlot <- renderPlot({
     dt_filtered %>%
+      get_age_group(.) %>% 
       # Filter Jahr
       { if (input$year_select != "All Years") filter(., year == as.numeric(input$year_select)) else . } %>%
       # Filter Altersgruppe
@@ -567,6 +650,8 @@ Use the dropdown menu to explore different interaction effects and understand ho
       theme(legend.position = "bottom")
   })
   
+# ----------- OUTPUT LOGIC: INSIGHTS TAB ------------------
+  
 # Insights:
   # insight_plots
   output$insight_plots <- renderUI({
@@ -602,8 +687,7 @@ Use the dropdown menu to explore different interaction effects and understand ho
              ),
              div(class = "flex-two-boxes",
                  div(class = "box-content", plotOutput("plot_polintr_rev", height = "350px")),
-                 div(class = "box-content", plotOutput("plot_freehms_rev", height = "350px"))
-             )
+                 div(class = "box-content", p("")))
              ),
            
            "Socio-Demographics" = tagList(
@@ -634,9 +718,8 @@ Use the dropdown menu to explore different interaction effects and understand ho
                    li(strong("Education satisfaction is surprisingly lowest in Germany:"), "Slovenia shows the highest and most consistent satisfaction, while Poland saw a sharp drop in 2020."),
                    li(strong("Health system satisfaction is lowest in Poland:"), "Polish respondents consistently report the lowest satisfaction, with a dramatic drop below 3 in 2020. Germany peaked around 2016 but declined afterwards."),
                    li(strong("Trust in the legal system is highest in Germany:"), "Germany shows a steady upward trend. Slovenia shows recent improvement, while Poland saw a significant drop in 2020."),
-                   li(strong("Support for further EU unification is broadly positive:"), "Respondents in all three countries generally want the EU to move forward, with Poland showing the strongest support. After 2014, all countries followed a similar upward trend, though support declined again slightly after 2020.")
-                   )
-             ),
+                   li(strong("Support for further EU unification is broadly positive:"), "Respondents in all three countries generally want the EU to move forward, with Poland showing the strongest support. After 2014, all countries followed a similar upward trend, though support declined again slightly after 2020."))),
+             
              div(class = "flex-two-boxes",
                  div(class = "box-content",  
                      p("For a better overview you can select a time range."),
@@ -646,18 +729,16 @@ Use the dropdown menu to explore different interaction effects and understand ho
                                  max = max(dt_filtered$year, na.rm = TRUE),
                                  value = c(min(dt_filtered$year, na.rm = TRUE), max(dt_filtered$year, na.rm = TRUE)),
                                  step = 2,
-                                 sep = ""))
-                     ),
-                 div(class = "box-content", plotOutput("plot_stfgov", height = "350px"))
-             ),
+                                 sep = ""))),
+                 div(class = "box-content", plotOutput("plot_stfgov", height = "350px"))),
+             
              div(class = "flex-two-boxes",
                  div(class = "box-content", plotOutput("plot_stfedu", height = "350px")),
-                 div(class = "box-content", plotOutput("plot_stfhlth", height = "350px"))
-             ),
+                 div(class = "box-content", plotOutput("plot_stfhlth", height = "350px"))),
+             
              div(class = "flex-two-boxes",
                  div(class = "box-content", plotOutput("plot_trstlgl", height = "350px")),
-                 div(class = "box-content", plotOutput("plot_euftf", height = "350px"))
-             )
+                 div(class = "box-content", plotOutput("plot_euftf", height = "350px")))
            )
     )
   })
@@ -666,19 +747,7 @@ Use the dropdown menu to explore different interaction effects and understand ho
   # plot_age_group
   output$plot_age_group <- renderPlot({
     dt_filtered %>%
-      mutate(
-        age_group = case_when(
-          agea < 18 ~ "<18",
-          agea >= 18 & agea <= 24 ~ "18–24",
-          agea > 24 & agea <= 34 ~ "25–34",
-          agea > 34 & agea <= 44 ~ "35–44",
-          agea > 44 & agea <= 54 ~ "45–54",
-          agea > 54 & agea <= 64 ~ "55–64",
-          agea > 64 ~ "64<",
-          TRUE ~ NA_character_
-        ),
-        age_group = factor(age_group, levels = c("<18", "18–24", "25–34", "35–44", "45–54", "55–64", "64<"))
-      ) %>%
+      get_age_group(.) %>%
       filter(!is.na(age_group)) %>%
       count(cntry, age_group) %>%
       group_by(cntry) %>%
@@ -690,7 +759,7 @@ Use the dropdown menu to explore different interaction effects and understand ho
         labels = trust_labels
       ) +
       labs(
-        title = paste("Age Group Distribution in", input$selected_year),
+        title = paste("Age Group Distribution"),
         x = "Age Group",
         y = "Proportion of Respondents (%)",
         fill = "Country"
@@ -710,11 +779,11 @@ Use the dropdown menu to explore different interaction effects and understand ho
       ggplot(aes(x = cntry, y = prop, fill = gndr)) +
       geom_col(position = "dodge") +
       scale_fill_manual(
-        values = c("1" = "#33658a", "2" = "#f6ae2d"),
+        values = c("1" = "#003399", "2" = "#FFCC00"), 
         labels = c("1" = "Male", "2" = "Female")
       ) +
       labs(
-        title = paste("Relative Distribution of Gender by Country in", input$selected_year),
+        title = paste("Relative Distribution of Gender by Country"),
         x = "Country",
         y = "Proportion of Respondents (%)",
         fill = "Gender"
@@ -735,7 +804,7 @@ Use the dropdown menu to explore different interaction effects and understand ho
         labels = trust_labels
       ) +
       labs(
-        title = paste("Average Education Years by Country in", input$selected_year),
+        title = paste("Average Education Years by Country"),
         x = "Country",
         y = "Years of Education",
         fill = "Country"
@@ -747,397 +816,242 @@ Use the dropdown menu to explore different interaction effects and understand ho
   
   # plot_stfgov
   output$plot_stfgov <- renderPlot({
-    dt_filtered %>%
-      filter(!is.na(stfgov), !is.na(year)) %>%
-      filter(year >= input$year_range[1], year <= input$year_range[2]) %>%
-      group_by(cntry, year) %>%
-      summarise(mean_stfgov = mean(stfgov, na.rm = TRUE), .groups = "drop") %>%
-      ggplot(aes(x = year, y = mean_stfgov, color = cntry, group = cntry)) +
-      geom_line(linewidth = 1) +
-      geom_point() +
-      scale_x_continuous(breaks = seq(min(dt_filtered$year, na.rm = TRUE),
-                                      max(dt_filtered$year, na.rm = TRUE),
-                                      by = 4)) +
-      scale_color_manual(
-        values = trust_colors,
-        labels = trust_labels
-      ) +
-      labs(
-        title = "Average Satisfaction with National Government \nby Country over Time",
-        x = "Year",
-        y = "Satisfaction (0–10 scale)",
-        color = "Country"
-      ) +
-      modern_clean_theme() +
-      theme(legend.position = "bottom")
+    plot_over_time(
+      var = "stfgov",
+      y_label = "Satisfaction (0–10 scale)",
+      title = "Average Satisfaction with National Government \nby Country over Time",
+      year_range = input$year_range
+    )
   })
   
   # plot_stfedu
   output$plot_stfedu <- renderPlot({
-    dt_filtered %>%
-      filter(!is.na(stfedu), !is.na(year)) %>%
-      filter(year >= input$year_range[1], year <= input$year_range[2]) %>%
-      group_by(cntry, year) %>%
-      summarise(mean_stfedu = mean(stfedu, na.rm = TRUE), .groups = "drop") %>%
-      ggplot(aes(x = year, y = mean_stfedu, color = cntry, group = cntry)) +
-      geom_line(linewidth = 1) +
-      geom_point() +
-      scale_x_continuous(breaks = seq(min(dt_filtered$year, na.rm = TRUE),
-                                      max(dt_filtered$year, na.rm = TRUE),
-                                      by = 4)) +
-      scale_color_manual(
-        values = trust_colors,
-        labels = trust_labels
-      ) +
-      labs(
-        title = "Average Satisfaction with State of Education \nby Country over Time",
-        x = "Year",
-        y = "Satisfaction (0–10 scale)",
-        color = "Country"
-      ) +
-      modern_clean_theme() +
-      theme(legend.position = "bottom")
+    plot_over_time(
+      var = "stfedu",
+      y_label = "Satisfaction (0–10 scale)",
+      title = "Average Satisfaction with State of Education \nby Country over Time",
+      year_range = input$year_range
+    )
   })
   
   # plot_stfhlth
   output$plot_stfhlth <- renderPlot({
-    dt_filtered %>%
-      filter(!is.na(stfhlth), !is.na(year)) %>%
-      filter(year >= input$year_range[1], year <= input$year_range[2]) %>%
-      group_by(cntry, year) %>%
-      summarise(mean_stfhlth = mean(stfhlth, na.rm = TRUE), .groups = "drop") %>%
-      ggplot(aes(x = year, y = mean_stfhlth, color = cntry, group = cntry)) +
-      geom_line(linewidth = 1) +
-      geom_point() +
-      scale_x_continuous(breaks = seq(min(dt_filtered$year, na.rm = TRUE),
-                                      max(dt_filtered$year, na.rm = TRUE),
-                                      by = 4)) +
-      scale_color_manual(
-        values = trust_colors,
-        labels = trust_labels
-      ) +
-      labs(
-        title = "Average Satisfaction with State of Health Services \nby Country over Time",
-        x = "Year",
-        y = "Satisfaction (0–10 scale)",
-        color = "Country"
-      ) +
-      modern_clean_theme() +
-      theme(legend.position = "bottom")
+    plot_over_time(
+      var = "stfhlth",
+      y_label = "Satisfaction (0–10 scale)",
+      title = "Average Satisfaction with State of Health Services \nby Country over Time",
+      year_range = input$year_range
+    )
   })
   
   # plot_trstlgl
   output$plot_trstlgl <- renderPlot({
-    dt_filtered %>%
-      filter(!is.na(trstlgl), !is.na(year)) %>%
-      filter(year >= input$year_range[1], year <= input$year_range[2]) %>%
-      group_by(cntry, year) %>%
-      summarise(mean_trstlgl = mean(trstlgl, na.rm = TRUE), .groups = "drop") %>%
-      ggplot(aes(x = year, y = mean_trstlgl, color = cntry, group = cntry)) +
-      geom_line(linewidth = 1) +
-      geom_point() +
-      scale_x_continuous(breaks = seq(min(dt_filtered$year, na.rm = TRUE),
-                                      max(dt_filtered$year, na.rm = TRUE),
-                                      by = 4)) +
-      scale_color_manual(
-        values = trust_colors,
-        labels = trust_labels
-      ) +
-      labs(
-        title = "Average Trust in the Legal System \nby Country over Time",
-        x = "Year",
-        y = "Trust (0–10 scale)",
-        color = "Country"
-      ) +
-      modern_clean_theme() +
-      theme(legend.position = "bottom")
+    plot_over_time(
+      var = "trstlgl",
+      y_label = "Trust (0–10 scale)",
+      title = "Average Trust in the Legal System \nby Country over Time",
+      year_range = input$year_range
+    )
   })
+  
   
   # plot_euftf
   output$plot_euftf <- renderPlot({
-    dt_filtered %>%
-      filter(!is.na(euftf), !is.na(year)) %>%
-      filter(year >= input$year_range[1], year <= input$year_range[2]) %>%
-      group_by(cntry, year) %>%
-      summarise(mean_euftf = mean(euftf, na.rm = TRUE), .groups = "drop") %>%
-      ggplot(aes(x = year, y = mean_euftf, color = cntry, group = cntry)) +
-      geom_line(linewidth = 1) +
-      geom_point() +
-      scale_x_continuous(breaks = seq(min(dt_filtered$year, na.rm = TRUE),
-                                      max(dt_filtered$year, na.rm = TRUE),
-                                      by = 4)) +
-      scale_color_manual(
-        values = trust_colors,
-        labels = trust_labels
-      ) +
-      labs(
-        title = "Average Support for EU Unification \nby Country over Time",
-        x = "Year",
-        y = "Satisfaction (0–10 scale)",
-        color = "Country"
-      ) +
-      modern_clean_theme() +
-      theme(legend.position = "bottom")
+    plot_over_time(
+      var = "euftf",
+      y_label = "Attitude (0–10 scale)",
+      title = "Average Support for EU Unification \nby Country over Time",
+      year_range = input$year_range
+    )
   })
   
   # plot_imwbcnt
   output$plot_imwbcnt <- renderPlot({
-    dt_filtered %>%
-      filter(!is.na(imwbcnt), !is.na(year)) %>%
-      filter(year >= input$year_range[1], year <= input$year_range[2]) %>%
-      group_by(cntry, year) %>%
-      summarise(mean_imwbcnt = mean(imwbcnt, na.rm = TRUE), .groups = "drop") %>%
-      ggplot(aes(x = year, y = mean_imwbcnt, color = cntry, group = cntry)) +
-      geom_line(linewidth = 1) +
-      geom_point() +
-      scale_x_continuous(breaks = seq(min(dt_filtered$year, na.rm = TRUE),
-                                      max(dt_filtered$year, na.rm = TRUE),
-                                      by = 4)) +
-      scale_color_manual(
-        values = trust_colors,
-        labels = trust_labels
-      ) +
-      labs(
-        title = "Average Attitude towards Immigrants \nby Country over Time",
-        x = "Year",
-        y = "Immigration Attitude (0–10 Scale)",
-        color = "Country"
-      ) +
-      modern_clean_theme() +
-      theme(legend.position = "bottom")
+    plot_over_time(
+      var = "imwbcnt",
+      y_label = "Immigration Attitude (0–10 Scale)",
+      title = "Average Attitude towards Immigrants \nby Country over Time",
+      year_range = input$year_range
+    )
   })
-  
   
   # plot_ppltrst
   output$plot_ppltrst <- renderPlot({
-    dt_filtered %>%
-      filter(!is.na(ppltrst), !is.na(year)) %>%
-      filter(year >= input$year_range[1], year <= input$year_range[2]) %>%
-      group_by(cntry, year) %>%
-      summarise(mean_ppltrst = mean(ppltrst, na.rm = TRUE), .groups = "drop") %>%
-      ggplot(aes(x = year, y = mean_ppltrst, color = cntry, group = cntry)) +
-      geom_line(linewidth = 1) +
-      geom_point() +
-      scale_x_continuous(breaks = seq(min(dt_filtered$year, na.rm = TRUE),
-                                      max(dt_filtered$year, na.rm = TRUE),
-                                      by = 4)) +
-      scale_color_manual(
-        values = trust_colors,
-        labels = trust_labels
-      ) +
-      labs(
-        title = "Average Trust in People \nby Country over Time",
-        x = "Year",
-        y = "Trust in People (0–10 Scale)",
-        color = "Country"
-      ) +
-      modern_clean_theme() +
-      theme(legend.position = "bottom")
+    plot_over_time(
+      var = "ppltrst",
+      y_label = "Trust in People (0–10 Scale)",
+      title = "Average Trust in People \nby Country over Time",
+      year_range = input$year_range
+    )
   })
   
   # plot_rlgatnd_rev
   output$plot_rlgatnd_rev <- renderPlot({
-    dt_filtered %>%
-      filter(!is.na(rlgatnd_rev), !is.na(year)) %>%
-      filter(year >= input$year_range[1], year <= input$year_range[2]) %>%
-      group_by(cntry, year) %>%
-      summarise(mean_rlgatnd_rev = mean(rlgatnd_rev, na.rm = TRUE), .groups = "drop") %>%
-      ggplot(aes(x = year, y = mean_rlgatnd_rev, color = cntry, group = cntry)) +
-      geom_line(linewidth = 1) +
-      geom_point() +
-      scale_x_continuous(breaks = seq(min(dt_filtered$year, na.rm = TRUE),
-                                      max(dt_filtered$year, na.rm = TRUE),
-                                      by = 4)) +
-      scale_color_manual(
-        values = trust_colors,
-        labels = trust_labels
-      ) +
-      labs(
-        title = "Average Attendance of Religious Services apart from \nSpecial Occasions by Country over Time",
-        x = "Year",
-        y = "Attendance Frequency (0–7 scale)",
-        color = "Country"
-      ) +
-      modern_clean_theme() +
-      theme(legend.position = "bottom")
+    plot_over_time(
+      var = "rlgatnd_rev",
+      y_label = "Attendance Frequency (0–7 scale)",
+      title = "Average Attendance of Religious Services apart from \nSpecial Occasions by Country over Time",
+      year_range = input$year_range
+    )
   })
+  
 
   # plot_polintr_rev
   output$plot_polintr_rev <- renderPlot({
-    dt_filtered %>%
-      filter(!is.na(polintr_rev), !is.na(year)) %>%
-      filter(year >= input$year_range[1], year <= input$year_range[2]) %>%
-      group_by(cntry, year) %>%
-      summarise(mean_polintr_rev = mean(polintr_rev, na.rm = TRUE), .groups = "drop") %>%
-      ggplot(aes(x = year, y = mean_polintr_rev, color = cntry, group = cntry)) +
-      geom_line(linewidth = 1) +
-      geom_point() +
-      scale_x_continuous(breaks = seq(min(dt_filtered$year, na.rm = TRUE),
-                                      max(dt_filtered$year, na.rm = TRUE),
-                                      by = 4)) +
-      scale_color_manual(
-        values = trust_colors,
-        labels = trust_labels
-      ) +
-      labs(
-        title = "Average Political Interest \nby Country over Time",
-        x = "Year",
-        y = "Political Interest (1-4 Scale)",
-        color = "Country"
-      ) +
-      modern_clean_theme() +
-      theme(legend.position = "bottom")
+    plot_over_time(
+      var = "polintr_rev",
+      y_label = "Political Interest (1–4 Scale)",
+      title = "Average Political Interest \nby Country over Time",
+      year_range = input$year_range
+    )
   })
   
-  # plot_freehms_rev
-  output$plot_freehms_rev <- renderPlot({
-    dt_filtered %>%
-      filter(!is.na(freehms_rev), !is.na(year)) %>%
-      filter(year >= input$year_range[1], year <= input$year_range[2]) %>%
-      group_by(cntry, year) %>%
-      summarise(mean_freehms_rev = mean(freehms_rev, na.rm = TRUE), .groups = "drop") %>%
-      ggplot(aes(x = year, y = mean_freehms_rev, color = cntry, group = cntry)) +
-      geom_line(linewidth = 1) +
-      geom_point() +
-      scale_x_continuous(breaks = seq(min(dt_filtered$year, na.rm = TRUE),
-                                      max(dt_filtered$year, na.rm = TRUE),
-                                      by = 4)) +
-      scale_color_manual(
-        values = trust_colors,
-        labels = trust_labels
-      ) +
-      labs(
-        title = "Average Attitude towards Gays and Lesbians \nby Country over Time",
-        x = "Year",
-        y = "Attitudes towards Homosexuals (1-5 Scale)",
-        color = "Country"
-      ) +
-      modern_clean_theme() +
-      theme(legend.position = "bottom")
-  })
-
+ 
+  
+# ----------- OUTPUT LOGIC: COMPARISON TAB ---------------
+  
 # Cross-Country Comparison
   # Model_DE
   modelDE <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + as.factor(year) + age_group + lrscale + polintr_rev + eduyrs_winsor,
                  data = subset(dt_filtered, cntry == "DE"))
   
-  output$Model_DE <- renderTable({
-    tidy(model_DE) %>%
-      mutate(
-        term = ifelse(term %in% names(var_labels), var_labels[term], term),
-        estimate = round(estimate, 3),
-        std.error = round(std.error, 3),
-        statistic = round(statistic, 3),
-        p.value = round(p.value, 3),
-        signif = stars.pval(p.value)  # neue Spalte mit *, **, ***
-      ) %>%
-      select(
-        Variable = term,
-        Estimate = estimate,
-        `Std. Error` = std.error,
-        `t-value` = statistic,
-        `p-value` = p.value,
-        `Signif.` = signif
-      )
-  }, striped = TRUE, bordered = TRUE, spacing = "s")
-  
   # Model_PL
   modelPL <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + as.factor(year) + age_group + lrscale + polintr_rev + eduyrs_winsor,
                  data = subset(dt_filtered, cntry == "PL"))
-  
-  
-  output$Model_PL <- renderTable({
-    tidy(model_PL) %>%
-      mutate(
-        term = ifelse(term %in% names(var_labels), var_labels[term], term),
-        estimate = round(estimate, 3),
-        std.error = round(std.error, 3),
-        statistic = round(statistic, 3),
-        p.value = round(p.value, 3),
-        signif = stars.pval(p.value)  # neue Spalte mit *, **, ***
-      ) %>%
-      select(
-        Variable = term,
-        Estimate = estimate,
-        `Std. Error` = std.error,
-        `t-value` = statistic,
-        `p-value` = p.value,
-        `Signif.` = signif
-      )
-  }, striped = TRUE, bordered = TRUE, spacing = "s")
   
   # Model_SI
   modelSI <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + as.factor(year) + age_group + lrscale + polintr_rev + eduyrs_winsor,
                  data = subset(dt_filtered, cntry == "SI"))
   
-  output$Model_SI <- renderTable({
-    tidy(model_SI) %>%
-      mutate(
-        term = ifelse(term %in% names(var_labels), var_labels[term], term),
-        estimate = round(estimate, 3),
-        std.error = round(std.error, 3),
-        statistic = round(statistic, 3),
-        p.value = round(p.value, 3),
-        signif = stars.pval(p.value)  # neue Spalte mit *, **, ***
-      ) %>%
-      select(
-        Variable = term,
-        Estimate = estimate,
-        `Std. Error` = std.error,
-        `t-value` = statistic,
-        `p-value` = p.value,
-        `Signif.` = signif
-      )
-  }, striped = TRUE, bordered = TRUE, spacing = "s")
-  
   library(broom)
-  library(dplyr)
   
-  # Funktion für ein Modell + tidy output
+  tidyDE <- tidy(modelDE)
+  tidyPL <- tidy(modelPL)
+  tidySI <- tidy(modelSI)
+  
+  
+  # Neuer Plot
   get_model_coef <- function(data, country_name) {
     model <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl +
                   imwbcnt + rlgatnd_rev + gndr + as.factor(year) +
                   age_group + lrscale + polintr_rev + eduyrs_winsor,
-                data = filter(data, cntry == country_name))
+                data = data[data$cntry == country_name, ])
     
     tidy(model) %>%
       filter(term != "(Intercept)") %>%
       mutate(
         country = country_name,
-        term = ifelse(term %in% names(var_labels), var_labels[term], term)
+        term = case_when(
+          grepl("as.factor\\(year\\)", term) ~ paste0("Year: ", gsub("as.factor\\(year\\)", "", term)),
+          term %in% names(var_labels) ~ var_labels[term],
+          TRUE ~ term
+        )
       )
   }
   
-  # Coef-Dataframes pro Land
-  coef_DE <- get_model_coef(dt_filtered, "DE")
-  coef_PL <- get_model_coef(dt_filtered, "PL")
-  coef_SI <- get_model_coef(dt_filtered, "SI")
-  
-  # Kombiniert
-  coef_all <- bind_rows(coef_DE, coef_PL, coef_SI)
-  
-  output$coefPlot <- renderPlot({
-    ggplot(coef_all, aes(x = estimate, y = reorder(term, estimate), color = country)) +
-      geom_point(position = position_dodge(width = 0.6), size = 2.5) +
-      geom_errorbarh(aes(xmin = estimate - 1.96 * std.error,
-                         xmax = estimate + 1.96 * std.error),
-                     position = position_dodge(width = 0.6),
-                     height = 0.2) +
-      facet_wrap(~ country) +
-      labs(
-        title = "Effect Sizes by Country",
-        x = "Coefficient Estimate (± 95% CI)",
-        y = NULL,
-        color = "Country"
-      ) +
-      theme_minimal(base_size = 12) +
-      theme(legend.position = "bottom")
+  # globales data_heatmap für Zugriff in der Tabelle
+  data_heatmap <- reactive({
+    coef_all <- bind_rows(
+      get_model_coef(dt_filtered, "DE"),
+      get_model_coef(dt_filtered, "PL"),
+      get_model_coef(dt_filtered, "SI")
+    )
+    
+    temp_category_vars <- category_vars
+    names(temp_category_vars)[names(temp_category_vars) == "Socio-Demographics"] <- "Socio-\nDemographics"
+    
+    group_map <- purrr::imap_dfr(temp_category_vars, ~ tibble(term = var_labels[.x], group = .y))
+    
+    coef_all %>%
+      filter(term %in% group_map$term) %>%
+      select(term, estimate, country) %>%
+      left_join(group_map, by = "term") %>%
+      mutate(
+        term = factor(term, levels = rev(unique(group_map$term))),
+        group = factor(group, levels = names(temp_category_vars))
+      )
   })
   
+
+    #Plot
+  output$coef_heatmap <- renderPlot({
+    ggplot(data_heatmap(), aes(x = country, y = term, fill = estimate)) +
+      geom_tile(color = "white") +
+      facet_grid(rows = vars(group), scales = "free_y", space = "free_y") +  # Gruppierung
+      scale_x_discrete(position = "top") + 
+      scale_fill_gradient2(low = "#003399", mid = "white", high = "#FF7300", midpoint = 0,
+                           name = "Coefficient") +
+      labs(
+        title = "",
+        x = NULL,, y = NULL
+      ) +
+      theme_minimal() +
+      theme(
+        strip.text.y = element_text(size = 14, face = "bold"),
+        axis.text.x = element_text(size = 14, face = "bold"),
+        axis.text.y = element_text(size = 12),
+        legend.position = "right"
+      )
+  })
+  
+  
+output$selected_variable_table <- renderTable({
+  req(input$heatmap_click)
+  
+  data <- data_heatmap()
+  
+  # Finde nächstgelegene term anhand y-Koordinate
+  data_with_y <- data %>%
+    distinct(term) %>%
+    mutate(y = as.numeric(term))  # Faktorpositionen
+  
+  # Finde den nächsten Wert
+  y_click <- input$heatmap_click$y
+  nearest_term <- data_with_y %>%
+    mutate(diff = abs(y - y_click)) %>%
+    arrange(diff) %>%
+    slice(1) %>%
+    pull(term)
+  
+  req(!is.null(nearest_term))
+  
+  # Maschinenlesbarer Name
+  selected_var <- names(var_labels)[var_labels == nearest_term]
+  req(length(selected_var) == 1)
+  
+  extract_coef <- function(tidy_df, var_name) {
+    tidy_df %>%
+      filter(term == var_name) %>%
+      transmute(
+        Estimate = round(estimate, 3),
+        `Std. Error` = round(std.error, 3),
+        `p-value` = round(p.value, 3),
+        Signif = symnum(p.value,
+                        cutpoints = c(0, 0.001, 0.01, 0.05, 1),
+                        symbols = c("***", "**", "*", ""))
+      )
+  }
+  
+  row_DE <- extract_coef(tidyDE, selected_var)
+  row_PL <- extract_coef(tidyPL, selected_var)
+  row_SI <- extract_coef(tidySI, selected_var)
+  
+  tibble::tibble(
+    Country = c("DE", "PL", "SI"),
+    Estimate = c(row_DE$Estimate, row_PL$Estimate, row_SI$Estimate),
+    `Std. Error` = c(row_DE$`Std. Error`, row_PL$`Std. Error`, row_SI$`Std. Error`),
+    `p-value` = c(row_DE$`p-value`, row_PL$`p-value`, row_SI$`p-value`),
+    Signif = c(row_DE$Signif, row_PL$Signif, row_SI$Signif)
+  )
+})
+  
+ 
+ 
   # Interaction Plots
   # Model 3a
   model3a <- lm(trstep ~ (ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + year + agea + I(agea^2) + lrscale + polintr_rev + eduyrs_winsor) * cntry,
                 data = dt_filtered)
+  
   
   # Explanations Interactions
   explanations <- list(
@@ -1177,7 +1091,6 @@ Use the dropdown menu to explore different interaction effects and understand ho
   
   
   #interactionPlot
-  #install.packages("future", dependencies = TRUE, type = "binary")
   library(interactions)
   
   output$interactionPlot <- renderPlot({
@@ -1188,12 +1101,14 @@ Use the dropdown menu to explore different interaction effects and understand ho
                   modx = cntry,
                   plot.points = FALSE,
                   interval = TRUE,
-                  main.title = paste("Effect of", var_labels[[selected_var]], "on Trust in EU"),
                   x.label = var_labels[[selected_var]],
-                  y.label = "Predicted EU Trust") +
+                  y.label = "Predicted EU Trust",
+                  modx.labels = trust_labels,
+                  colors = trust_colors) +
+      labs(color = "Country") + 
       modern_clean_theme() +
-      scale_color_manual(values = trust_colors, labels = trust_labels) +
-      scale_fill_manual(values = trust_colors, labels = trust_labels)
+      theme(legend.position = "bottom")
+    
       
   })
   
@@ -1224,7 +1139,7 @@ Use the dropdown menu to explore different interaction effects and understand ho
         corr,
         lab = FALSE,  
         type = "lower",
-        colors = c("#33658a", "white", "#f26419"),
+        colors = c("#003399", "white", "#FF7300"),
         outline.color = "grey90"
       )
     })
@@ -1256,7 +1171,7 @@ Use the dropdown menu to explore different interaction effects and understand ho
         corr,
         lab = TRUE,
         type = "lower",
-        colors = c("#33658a", "white", "#f26419"),
+        colors = c("#003399", "white", "#FF7300"),
         outline.color = "grey90",
         tl.cex = 10,
         lab_size = 3,
@@ -1319,5 +1234,6 @@ Use the dropdown menu to explore different interaction effects and understand ho
 
 # Run the application 
 shinyApp(ui = ui, server = server)
+
 
 
