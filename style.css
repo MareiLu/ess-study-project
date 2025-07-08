@@ -1,9 +1,6 @@
 /* Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
 
-/* background-color: #003399; /* EU blue */
-/* color: #FFD700;            /* EU gold (stars) */
-/* color: #ffffff;            /* Light Grey */
 
 /* Header */
     .fixed-header {
@@ -13,7 +10,7 @@
       width: 100%;
       color: #333333;
       background-color: #ffffff;
-      padding: 20px 30px;
+      padding: 10px 20px;
       z-index: 1000;
     }
     
@@ -22,18 +19,19 @@
       display: flex;
       align-items: center;
       gap: 20px;
-      margin-bottom: 10px;
+      margin-bottom: 5px;
+      margin-top: 5px;
     }
     
     /* EU-Logo */
     .eu-logo {
-      height: 80px;
+      height: 60px;
       width: auto;
     }
     
     /* Title in Header */
     .header-text h1 {
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 700;
       margin: 0;
       color: #333333;
@@ -42,7 +40,7 @@
     
     /* Subtitle in Header*/
     .header-text h2 {
-      font-size: 22px;
+      font-size: 18px;
       font-weight: 400;
       margin: 5px 0 0;
       color: #333333;
@@ -54,7 +52,7 @@
       display: flex;
       gap: 6px;
       border: none;
-      margin-top: 15px;
+      margin-top: 5px;
       padding-bottom: 0;
       color: #333333;
       background-color: transparent;
@@ -64,10 +62,10 @@
     .nav-wrapper .nav-tabs > li > a {
       color: #333333;
       font-weight: 500;
-      font-size: 16px;
+      font-size: 14px;
       border: none;
       border-radius: 0;
-      padding: 10px 20px;
+      padding: 8px 16px;
       background-color: transparent;
       transition: all 0.2s ease;
     }
@@ -89,13 +87,25 @@
       font-weight: 600;
     }
 
+/* Main Content padding */
+    #mainContent {
+      padding-top: 130px !important;
+    }
+
 /*  Body */
     body {
-      background-color: #e6ecf8;
+      background-color: #EBF1FF; 
       font-family: 'Roboto', sans-serif;
       color: #333333;
       margin: 0;
       padding: 0;
+    }
+    
+    /*  Accents */
+    :root {
+      --main: #003399/*#33658a*/
+      --accent: #FF7300;
+      --secondary: #FFCC00/*#f6ae2d;*/
     }
 
     /* Common spacing around  */
@@ -111,6 +121,10 @@ h1, h2, h3, h4 {
   font-weight: 700;
   margin-top: 10px;
   margin-bottom: 10px;
+}
+
+h1, h2, h3, h4 {
+  color: var(--main);
 }
 
 /* Paragraph */
@@ -179,7 +193,13 @@ p {
 
 /* Responsiveness for smaller screens */
 @media (max-width: 768px) {
-  .box-content {
-    flex: 1 1 100%;
+  #mainContent {
+    padding-top: 190px; 
+  }
+  body {
+    font-size: 14px;
+  }
+  h1 {
+    font-size: 20px;
   }
 }
