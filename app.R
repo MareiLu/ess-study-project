@@ -153,7 +153,7 @@ ui <- fluidPage(
   
   # Tagging CSS 
   tags$head(
-    tags$link(rel = "stylesheet", type = "text/css", href = "style.css?v=1.1")
+    tags$link(rel = "stylesheet", type = "text/css", href = "style.css?v=1.4")
   ),
   
   # Define fixed Header
@@ -179,11 +179,10 @@ ui <- fluidPage(
       )
   ),
   
-  # Spacing under header so that content is not covered
-  div(style = "height: 130px;"),
-  
   # Content that is displayed depending on the tab
-  uiOutput("tabContent")
+  div(id = "mainContent",
+      uiOutput("tabContent")
+  )
 )
   
  
@@ -1248,6 +1247,5 @@ dt_filtered %>%
 
 # Run the application 
 shinyApp(ui = ui, server = server)
-
 
 
