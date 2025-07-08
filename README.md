@@ -3,7 +3,12 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 
 # To Do:
 *Notizen zu Dashboard*
-- Key Interaction Effects: Change to Attitudes towards EU unification
+- Ändern: All Interaction Effects
+Besides the pooled multiple linear regression model including a country interaction, we estimated the same model for each country, leaving out the interaction. The findings of these models let us gain insights into what shapes EU trust in each country, highlighting the most significant predictors. These tables represent the regression output for Slovenia, Poland and Germany.
+zu
+Country-Specific Models
+In addition to the pooled multiple linear regression model, where all variables are interacted with country, we estimated the same model separately for each country, including time fixed effects. These country-specific models provide insights into the key predictors of EU trust within each country. The heat map below visualizes the regression results for Slovenia, Poland and Germany. To view detailed estimates, please click an a row of your choice.
+
 
 *Dashboard*
 - Trust in EU -> erledigt. Lediglich evtl politische events googlen die zu drops hätten führen können.
