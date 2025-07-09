@@ -22,7 +22,9 @@ library(gtools)
 
 # ----------- LOAD DATA -----------
 
-dt_filtered <- read_sav(here("data", "ESS_filtered.sav")) 
+setwd("/Users/test/Documents/Studium/Semester 6/Project Study")
+#dt_filtered <- haven::read_sav(file.choose()) # ESS_filtered.sav
+dt_filtered <- haven::read_sav("data", "ESS_filtered.sav")) 
 
 # ----------- GLOBAL VARIABLES -----------
 
