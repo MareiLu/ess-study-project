@@ -6,6 +6,13 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 
 Since it is not possible to come to a clear and inter-country-wide prediction of Trust in the EU, we estimate that there must be other underlying factors involved in shaping this trust.
 
+- App; descriptives bzw. data wrangling as "additional code"; Dataset
+- in Report figures & tables if necessary in the appendix
+- references for context
+- Introduction about motivation & stating of the idea
+- What, Why to What are the Recommendations
+- Highlight key facts
+
 *Dashboard*
   
 *Für die Models*
@@ -44,6 +51,8 @@ Since it is not possible to come to a clear and inter-country-wide prediction of
 - Report ist wie eine Art Anleitung für das Dashboard
 - Wenn wir interessante Patterns haben (z.B. für Polen), dann können wir die auch erklären und auch in der Präsi mit einbeziehen
 - am Ende Outlooks/Implikationen geben
+- Explain plots broadly (mean, median, how doing predictions etc.; not necessary to including all models etc. or go into every graph)
+- Key elements of the dashboard & key learnings to derive decisions
 
 # Nicht mehr wichtig fürs Dashboard:
 *Für das Paper & das Dashboard*
