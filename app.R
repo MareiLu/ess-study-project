@@ -1,5 +1,6 @@
 
-# Basics:
+# ----------- LOAD PACKAGES -----------
+
 # install.packages("shiny")
 library(shiny)
 library(haven)
@@ -11,23 +12,72 @@ library(interactions)
 library(shinyWidgets)
 library(ggcorrplot)
 library(rlang)
+library(skimr)       
+library(psych)       
+library(labelled)
+library(dplyr)
+library(tidyr)
+library(gtools)
 
-#library(skimr)       
-#library(psych)       
-#library(labelled)
-#library(dplyr)
-#library(tidyr)
-#library(gtools)
 
+# ----------- LOAD DATA -----------
 
-# Loading the data
 dt_filtered <- read_sav(here("data", "ESS_filtered.sav")) 
 
-# ----------- SECTION: GLOBAL SETTINGS -----------
+# ----------- GLOBAL VARIABLES -----------
 
 # Colors and Labels for Countries 
 trust_colors <- c("DE"="#003399", "PL"="#FFCC00", "SI"="#FF7300")
 trust_labels <- c("DE"="Germany", "PL"="Poland", "SI"="Slovenia")
+
+# Defining the Categories of Variables
+category_vars <- list(
+  "Socio-Demographics" = c("age_group", "gndr", "eduyrs_winsor"),
+  "Political Attitudes" = c("stfgov", "stfedu", "stfhlth", "trstlgl", "euftf"),
+  "Ideology" = c("imwbcnt", "ppltrst", "rlgatnd_rev", "polintr_rev", "lrscale")
+)
+
+# Defining the Labels attached to the variables
+var_labels <- c(
+  trstep        = "Trust in the EU",
+  euftf         = "Attitude towards EU Unification",
+  stfedu        = "Satisfaction with State of Education",
+  stfgov        = "Satisfaction with National Government",
+  stfhlth       = "Satisfaction with State of Health Services ",
+  trstlgl       = "Trust in Legal System",
+  ppltrst       = "Trust in People",
+  imwbcnt       = "Attitude towards Immigrants",
+  rlgatnd_rev   = "Religious Service Attendance",
+  lrscale       = "Left-Right Political Placement",
+  polintr_rev   = "Political Interest",
+  eduyrs_winsor = "Years of Education",
+  gndr          = "Gender",
+  year          = "Year",
+  age_group     = "Age Group"
+)
+
+label_map <- tibble::tibble(
+  term = unname(var_labels),
+  var = names(var_labels)
+)
+
+#Add Trust in EU separately
+main_var <- setNames("trstep", "Trust in the EU")
+
+# Grouped variable choices
+grouped_choices <- lapply(category_vars, function(vars) {
+  stats::setNames(vars, var_labels[vars])
+})
+
+# Combine: ungrouped main_var first, then the grouped ones
+final_choices <- c(main_var, grouped_choices)
+
+# Defining List shortcut
+ul <- tags$ul
+ol <- tags$ol
+li <- tags$li
+
+# ----------- GLOBAL FUNCTIONS -----------
 
 # Set global plot theme
 modern_clean_theme <- function(base_size = 14, base_family = "sans") {
@@ -99,61 +149,34 @@ plot_over_time <- function(var, y_label, title, year_range = NULL) {
     theme(legend.position = "bottom")
 }
 
-
-# Defining the Categories of Variables
-category_vars <- list(
-  "Socio-Demographics" = c("age_group", "gndr", "eduyrs_winsor"),
-  "Political Attitudes" = c("stfgov", "stfedu", "stfhlth", "trstlgl", "euftf"),
-  "Ideology" = c("imwbcnt", "ppltrst", "rlgatnd_rev", "polintr_rev", "lrscale")
-)
-
-var_labels <- c(
-  trstep        = "Trust in the EU",
-  euftf         = "Attitude towards EU Unification",
-  stfedu        = "Satisfaction with State of Education",
-  stfgov        = "Satisfaction with National Government",
-  stfhlth       = "Satisfaction with State of Health Services ",
-  trstlgl       = "Trust in Legal System",
-  ppltrst       = "Trust in People",
-  imwbcnt       = "Attitude towards Immigrants",
-  rlgatnd_rev   = "Religious Service Attendance",
-  lrscale       = "Left-Right Political Placement",
-  polintr_rev   = "Political Interest",
-  eduyrs_winsor = "Years of Education",
-  gndr          = "Gender",
-  year          = "Year",
-  age_group     = "Age Group"
-)
-
-label_map <- tibble::tibble(
-  term = unname(var_labels),
-  var = names(var_labels)
-)
-
-#Add Trust in EU separately
-main_var <- setNames("trstep", "Trust in the EU")
-
-# Grouped variable choices
-grouped_choices <- lapply(category_vars, function(vars) {
-  stats::setNames(vars, var_labels[vars])
-})
-
-# Combine: ungrouped main_var first, then the grouped ones
-final_choices <- c(main_var, grouped_choices)
-
-# Defining List shortcut
-ul <- tags$ul
-li <- tags$li
+# Function to get the model coefficients
+get_model_coef <- function(data, country_name) {
+  model <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl +
+                imwbcnt + rlgatnd_rev + gndr + as.factor(year) +
+                age_group + lrscale + polintr_rev + eduyrs_winsor,
+              data = data[data$cntry == country_name, ])
+  
+  tidy(model) %>%
+    filter(term != "(Intercept)") %>%
+    mutate(
+      country = country_name,
+      term_clean = case_when(
+        grepl("^as\\.factor\\(year\\)", term) ~ paste0("Year: ", gsub("as.factor\\(year\\)", "", term)),
+        term %in% names(var_labels) ~ var_labels[term],
+        TRUE ~ term
+      ))
+}
 
 
-# ----------- SECTION: UI DEFINITION -------------
+
+# ----------- UI: HEADER, LAYOUT, NAVIGATION -----------
 
 # Defining the User Interface
 ui <- fluidPage(
   
   # Tagging CSS 
   tags$head(
-    tags$link(rel = "stylesheet", type = "text/css", href = "style.css?v=1.4")
+    tags$link(rel = "stylesheet", type = "text/css", href = "style.css?v=2.1")
   ),
   
   # Define fixed Header
@@ -186,18 +209,19 @@ ui <- fluidPage(
 )
   
  
-# ----------- SECTION: SERVER LOGIC --------------
+# ----------- SERVER: DEFINITION -----------
 
 
 # Defining the server logic 
 server <- function(input, output) {
   
+  # ----------- TABLOGIC: DYNAMIC RENDERING -----------
+  
   output$tabContent <- renderUI({
     switch(input$tabs,
-           
-        # ---------- SERVER LOGIC: ABOUT TAB ------------
-
-       # About
+    
+    # ----------- TAB: ABOUT -----------
+    
        "about" = tagList(
            div(class = "page-section",
                 
@@ -209,10 +233,10 @@ server <- function(input, output) {
                       column(6,
                            h2("About this Project"),
                            p("This project examines the factors influencing trust in the European Union across three distinct member states: Germany, Poland, and Slovenia. These countries represent different positions on the ranking of EU fundings: Germany as the largest net contributor, Poland as the largest net recipient, and Slovenia as a moderate, small-scale beneficiary."), 
-                           p("We base the selection of these three countires on the Statista household evaluation of the year 2023 on the right. Underlying this selection is the assumption, that monetary connections between countries and the institution could influence the visibility of the EU within that country and that, in turn, this visibility could influence Trust in the European Parliament. This assumption, nevertheless, cannot be proven in this study and solely serves the purpose of selection of countries we look at."),
+                           p("We base the selection of these three countries on the Statista household evaluation of the year 2023 on the right. Underlying this selection is the assumption that monetary connections between countries and the institution could influence the visibility of the EU within that country and that, in turn, this visibility could influence trust in the European Parliament. This assumption, nevertheless, cannot be proven in this study and solely serves the purpose of selection of countries we look at."),
                            p("The focus lies on the investigation of how political attitudes, ideological orientations, and socio-demographic variables shape public trust in the European Parliament within each country. By comparing the three cases, we aim to uncover both country-specific and cross-national patterns. In particular, attention is paid to the interplay between the selected factors and how they collectively influence trust levels."),
-                           p("The project features interactive graphs and visualizations that provide a clear and comparative view of the data and a transparent picture for each country. Our findings contribute to current research on public attitudes towards the EU, offering valuable insights for policymakers that seek to strengthen pro-EU sentiments and engagement."),
-                           p("On a last note: In the further Analysis of this Project, we will use Trust in the European Parliament as an indicator for Trust in the EU and will use the two expressions interchangeably.")
+                           p("The project features interactive graphs and visualizations that provide a clear and comparative view of the data and a transparent picture of each country. Our findings contribute to current research on public attitudes towards the EU, offering valuable insights for policymakers that seek to strengthen pro-EU sentiments and engagement."),
+                           p("On a last note: In the further Analysis of this Project, we will use trust in the European Parliament as an indicator for trust in the EU and will use the two expressions interchangeably.")
                        ),
                     
                     # PNG right
@@ -228,12 +252,12 @@ server <- function(input, output) {
                 div(class = "box-content",
                     h2("Data Source"),
                     h4("European Social Survey (ESS)"),
-                    p("The data used for this project is provided by the European Social Survey, a cross-national survey that has been conducted every two years since 2002. It contains open access data on public attitudes, beliefs and behavior. Covering themes of social, political and economic matters, it provides rich demographic and socio-economic variables on 39 European countries. Its high-quality data with cross-sectional samples allows for examining trends over time within and between countries. For our research purposes, we have used a personalized dataset on the three countries, with selected variables that fit our research question. We included information on all available years.")
+                    p("The data used for this project is provided by the European Social Survey, a cross-national survey that has been conducted every two years since 2002 until the newest round in  2022. It contains open access data on public attitudes, beliefs and behavior. Covering themes of social, political and economic matters, it provides rich demographic and socio-economic variables in 39 European countries. It is high-quality data with cross-sectional samples that allows for examining trends over time within and between countries. For our research purposes, we have used a personalized dataset on the three countries, with selected variables that fit our research question. We included information on all available years.")
                  ),
                 
                 div(class = "box-content",
                     h2("About Us"),
-                    p("We are two students from the University of Cologne, studying in the B.Sc. Management, Economics and Social Sciences. As part of our final semester we developed this project study in the field of Data Science and Quantitative Methods, consisting of a statistical analysis, a data presentation on this dashboard and a final report. Our analysis has been made possible thanks to the supervision by Sebastian Weibels and Prof. Dr. Tom Zimmermann."),
+                    p("We are two students from the University of Cologne, studying in the B.Sc. Management, Economics and Social Sciences. As part of our final semester we developed this project study in the field of Data Science and Quantitative Methods, consisting of a statistical analysis, a data presentation on this dashboard and a final report. Our analysis has been made possible thanks to the supervision by Prof. Dr. Tom Zimmermann and Sebastian Weibels."),
                     p("For inquiries, feel free to contact us:"), 
                     p("Helena Zappe: hzappe@smail.uni-koeln.de", br(), "Marei Göbelbecker: mgoebelb@smail.uni-koeln.de")
                  )
@@ -241,47 +265,49 @@ server <- function(input, output) {
            )
        ),
        
-      # ----------- SERVER LOGIC: TRUST TAB ------------
+    # ----------- TAB: TRUST EU -----------
       
-      # Trust in the EU        
       "trust" = tagList(
           div(class = "page-section",
               
-              h2("How much does people's trust in the European Parliament differ?"),
+              h2("How much does People's Trust in the European Parliament differ?"),
               
-              p("This variable is coded on a scale from 0 (No trust at all) to 10 (Complete Trust).", br(), "Please note the y-intercept of the individual plots.", style = "margin-bottom: 30px;"),
+              p("The variable investigated in this project is individuals' trust in the European Parliament and its development over time. This variable is coded on a scale from 0 (No Trust at All) to 10 (Complete Trust).", style = "margin-bottom: 30px;"),
             
               div(class = "full-width-box",
                   plotOutput("euTrustPlot", height = "350px")
                ),
               
-              p("The main variable that we are looking at in this analysis is individuals trust in the European Parliament and its development over time. Therefore we investigate the development of the average trust levels in all three countries. Overall, average trust in the EU seems to be fairly similar in all three countries. They are all fluctuating around a mean of 4.2. Therefore, we take a closer look at the individual evolutions of trust over the years, which show clear differences."),
-              p("Germany was the most stable over the years with constant ups and downs. Its lowest point was reached in 2010 and its peak in 2022. Poland has started off as the country with the highest trust in the EU in 2002, but has experienced a severe decline in trust in 2012 until 2014 when it had reached its lowest. After that trust rose again until 2018, after which it has experienced another drop, such that at the end of 2022 it was on a level much lower than the other two countries. Slovenia shows the strongest fluctuations in mean trust in the EU over time, with a sharp decline between its highest level of 5.0 in 2006 to its lowest point of 3.4 in 2014. Since then, trust rose again, such that in 2022 it was only slightly lower than the German trust level."),
-              p("These differences in the evolution of Trust in the EU points towards the existence of a multitude of factors which shape Trust. These factors are expected to influence individuals differently dependending on which country they live in. Such relationships will be analysed further in this project.", style = "margin-bottom: 30px;"),
+              p("This plot shows the average trust levels in all three countries.", strong("Overall, average trust in the EU seems to be fairly similar in all three countries."), "They are all fluctuating around a mean of 4.2. "),
+              ul(
+                li(strong("Germany"), "has been the most stable over the years with constant ups and downs. Its lowest point was in 2010 and its peak in 2022."),
+                li(strong("Poland"), "started off as the country with the highest trust in the EU in 2002, but experienced a severe decline in trust from 2012 until 2014 when it had reached its lowest point. After that, trust rose again until 2018 after which it experienced another drop, such that at the end of 2022 it was on a level much lower than the other two countries. "),
+                li(strong("Slovenia"), "shows the strongest fluctuations over time, with a sharp decline between its highest level of 5.0 in 2006 to its lowest point of 3.4 in 2014. Since then, trust rose again, such that in 2022 it was only slightly lower than the German trust level.")
+              ),
+              p("These differences in the evolution of average trust in the EU point towards the existence of a multitude of factors which shape trust within the different countries.", style = "margin-bottom: 30px;"), 
               
+              h3("Are there distinct Patterns of Trust Levels in the EU between Different Age Groups?"),
+              selectInput("selected_year", "Select Year:", choices = c("All Years (Average)" = "all", sort(unique(dt_filtered$year)))),
               
               div(class = "full-width-box",
-                  selectInput("selected_year", "Select Year:", choices = c("All Years (Average)" = "all", sort(unique(dt_filtered$year)))),
                   plotOutput("euTrustPlot2", height = "350px")
               ),
               
-              p("To start our further analysis we were interested in whether there were clear patterns in trust levels when dividing by age groups. On average over the years, trust in the EU was highest among people younger than 18 in all three countries, with respondents from Germany having been the most, and respondents from Poland being the least trusting. In the higher age groups in Germany and Slovenia there was a general downward trend until the age of 65, from which onward trust levels were again slightly higher. Germany's levels are slightly higher than in Slovenia in all age groups. The trust of Polish individuals seems to be more stable in all age groups, which means it was by far the lowest in the younger age groups but highest in the ages over 45."),
-              
-              p("It is then interesting to look at this aspect in the different ESS rounds. Doing so this general pattern is still visible even though in different magnitudes. We will further investigate this at a later point in the analysis.")
+              p("Yes, there are differences of trust between the age groups, even though they are not large. On an aggregate level, all countries show a general downward trend with the youngest people >18 having the highest trust in the EU. This trend continues until the age of 55-64, from which onward people trust slightly more again."),
+              p("German trust levels show a common downward trend over the years, whereas Poland does not show a distinct trend between years. Slovenia has a relatively stable trust level across all age groups up until 2014, from which onward it displays a similar trend as Germany.")
           )
        ),
       
-      # ----------- SERVER LOGIC: CONTEXT TAB ------------
+    # ----------- TAB: POLITICAL CONTEXT -----------
       
-      # Political Context 
        "context"  = tagList(
          div(class = "page-section",
              
-             h2("What is the political context of the EU from 2002 to 2022?"),
-             p("In this section we want to provide some background knowledge which is not found in the ESS Data but provides an important basis for analysis. Even though we will not express the connection of individual findings to these events, they are part of why attitudes and trust can change.", style = "margin-bottom: 30px;"),
+             h2("What Is the Political Context of the EU from 2002 to 2022?"),
+             p("This section provides background knowledge on political events which is absent in the ESS Data and sets an important basis for the analysis. Connections between country-specific findings and specific events are not made explicitly in this analysis, but such events are accounted for through time-fixed effects in the models, as they may influence attitudes and trust.", style = "margin-bottom: 30px;"),
              
              div(class = "full-width-box",
-                 h3("Main Political Events in the EU:"),
+                 h4("Main Political Events in the EU"),
                  ul(
                    li("2002 – National currencies replaced by Euro notes and coins"),
                    li("2003 – Plans for a European constitution suffer a setback"),
@@ -301,11 +327,14 @@ server <- function(input, output) {
                  )
              ),
              
-             h2("What distinguishes the three countries?"),
+             h3("What Distinguishes the Three Countries Politically?"),
+             p(strong("EU Participation:"), "While Germany was one of the founding members of the EU and has been part of it since 1958, Poland and Slovenia joined the Institution in 2004. Therefore, the two countries have not yet been part of the EU in the beginning of the analyzed time frame."),
+             p(strong("Form of Government:"), "All three countries are Parliamentary Democracies, even though of different forms."),
+             p(strong("Economic Power:"), "Poland's and Slovenia's GDP per Capita are both below the EU average. Poland makes up 4.4% of the EU's total GDP, while Slovenia's part makes up 0.4%. Germany's GDP per capita is well above the EU average and constitutes the largest part of the EU's GDP with 24.2%. These numbers underline the sizes of the countries’ economic forces."),
+             p(strong("Benefits from EU Funding:"), "All three countries benefit from being part of the EU by receiving funding for individual projects, as well as open borders and trade. Poland is a large net recipient of fundings, whereas Slovenia receives only small net funding. Germany is the largest net contributor to the EU household.", style = "margin-bottom: 30px;"),
              
-             p("While Germany has been one of the founding members of the EU and has therefore been part since 1958, Poland and Slovenia joined the Institution in 2004. Therefore, in the beginning of our time frame, the two countries have not even been part of the EU yet.", br(), "All three countries are Parliamentary Democracies, even though of different forms.", br(), "Poland's and Slovenia's GDP per Capita are both below the EU average. Poland makes up 4.4% of the EU's total GDP, while Slovenia's part makes up 0.4%. Germany's GDP per capita is well above the EU average and has the largest part of the EU's GDP with 24.2%. This shows the sizes of the economic force of the countries.", br(), "All three countries benefit from being part of the EU by receiving funding for individual projects and open borders and trade."),
-             
-             p("An additional baseline is provided by respondents' political self-placement and voting behavior within the CSS dataset. Voting behavior reveals a notable cross-country difference: respondents in Germany appear more politically engaged, with significantly higher voting participation compared to those in Poland and Slovenia. Regarding ideological orientation, political self-placement across all three countries tends to cluster around the center of the left-right scale (value 5). However, national trends are clear—respondents in Germany lean as far left, as Polish orientations lean to the right, while Slovenia is though less extreme, also clearly showing a clear leftist tendency.", style = "margin-bottom: 30px;"),
+             h3("How Does the Political Landscape Look Within the Three Countries?"),
+             p("An additional baseline is provided by respondents' political self-placement and voting behavior within the ESS dataset."),
              
              radioButtons("year_select", "Filter by Year",
                                    choices = c("All Years", "2002", "2004", "2006", "2008", "2010",
@@ -325,33 +354,26 @@ server <- function(input, output) {
              div(class = "full-width-box",
                  plotOutput("votePlot", height = "300px")
              ),
-             h3("Ideological Distribution Across Age Groups and Years"),
+             
+             p(strong("Political Participation:"), "All three countries showcase high voting rates which have increased over time, with a significant growth since 2018. Across all years, the highest voter turnout is in Germany, with an exception in 2022. Comparing different age groups reveals that younger respondents vote less frequently, but participation is rising with increasing age. Older respondents are consistently more politically active."),
+             p(strong("Political Orientation:"), "The political self-placement across all three countries tends to cluster around the center of the left-right scale (value 5). However, national trends are clear: respondents in Germany lean as far left, as Polish orientations lean to the right. Slovenia is less extreme but also clearly shows a left-leaning tendency."),
              ul(
-               li("Poland: Respondents are significantly more right-leaning across all years and age groups. The left-leaning share remains relatively constant, while the right-leaning share increases strongly with age and people shift from the center to the right."),
-               li("Germany: Respondents are generally more left-leaning, especially among younger people. There's a gradual shift toward the right with increasing age, but the pattern is relatively stable over time."),
-               li("Slovenia: There is a polarization trend with age: older people are more likely to identify as either left- or right-leaning, moving away from the center. Younger respondents lean left. However, there is still a balanced distribution between left- and right-leaning people across years."),
-               li("Overall: Younger age groups are more left-leaning across all countries. Respondents aged 65+ tend to be more right-leaning. While there are some year-to-year fluctuations, the general ideological patterns remain stable.")
+               li("In", strong("Poland"), "the right-leaning share increases strongly with age when people shift from the center to the right."),
+               li("In", strong("Germany"), "respondents are generally more left-leaning, especially among younger people. There's a gradual shift toward the right with increasing age, but the pattern is relatively stable over time."),
+               li("In", strong("Slovenia"), "older people are more likely to identify as either left- or right-leaning, moving away from the center. Younger respondents lean left. However, there is still a balanced distribution between left- and right-leaning people across years."),
+               li("A", strong("general distinction"), "by age group shows that younger people are more left-leaning across all countries, whereas older respondents tend to be more right-leaning. While there are some year-to-year fluctuations, the general ideological patterns remain stable.")
              ),
              
-             h3("Voting Distribution Across Age Groups and Years"),
-             ul(
-               li("Voting participation has increased over time, with the highest voter turnout in Germany across all years."),
-               li("Significant growth in voter turnout since 2018 in all three countries."),
-               li("Older respondents are consistently more politically active, with higher voting rates."),
-               li("Younger respondents vote less frequently, but participation is rising with increasing age.")
-             )
-       
          )
        ),
       
-      # ----------- SERVER LOGIC: INSIGHTS TAB ------------
+    # ----------- TAB: INSIGHTS -----------
            
-       # Insights
        "insights"  = tagList(
          div(class = "page-section",
-             h2("Which general insights can be differed by looking at individual factors influencing trust in the EU?"),
+             h2("What Shapes Trust in the EU?"),
              
-             p("In order to get an overview of individual influences, you can investigate the variables within our categories of analysis here."),
+             p("This section explores how trust in the EU is influenced by demographic profiles, ideological factors, and levels of political and institutional trust."),
              
              selectInput("insight_category", "Select Category:",
                          choices = names(category_vars),
@@ -361,14 +383,12 @@ server <- function(input, output) {
          )
        ),
       
-      # ----------- SERVER LOGIC: COMPARISON TAB ------------
+    # ----------- TAB: CROSS-COUNTRY COMPARISON -----------
         
-      # Cross-Country Comparison
        "comparison"  = tagList(
          div(class = "page-section",
-             h2("How big are the influences on trust in the EU and how do they differ between the countries?"),
-             p("This page presents key insights into the cross-country differences, which is the core of our research questions. Interactive plots of interaction effects, alongside tables of regression outputs, highlight the most striking contrasts between Germany, Poland and Slovenia, as well as the most influential predictors of trust in the EU within each country.
-We estimated a multiple linear regression model that includes all predictor variables from the “Insights” tab and interacted each with the variable “country” to allow for cross-country comparisons. In this model, Germany serves as the baseline.", style = "margin-bottom: 30px;"),
+             h2("What Predicts Trust in the EU? And How Do These Patterns Differ by Country?"),
+             p("This page presents the findings of a multiple linear regression model, which includes all predictors investigated before. It aims at estimating significance and magnitude of individual predictors and allows cross-country differences.", style = "margin-bottom: 30px;"),
              
              # Correlation Matrix
              h3("Correlation Patterns"),
@@ -413,14 +433,12 @@ We estimated a multiple linear regression model that includes all predictor vari
                  
              ),
              
-             p("Across all three countries, the correlations range from -0.1 to 0.5. Moderate correlations are observed between the various satisfaction variables. These include trust in the legal system and satisfaction with the state of health services, the state of education, and the national government. The consistent clustering of these variables across countries suggest that they reflect a general sense of satisfaction with national institutions. In most cases, correlation coefficients do not exceed 0.5, indicating moderate associations. An exception is observed in Slovenia, where satisfaction with education and healthcare services have a correlation of 0.54. Importantly, the correlations between these predictors and trust in the EU are relatively stronger across all three countries. This supports the relevance and empirical justification for including these variables in the regression models.", style = "margin-bottom: 30px;"),
+             p("Generally, there are", strong("moderate correlations in all three countries"), "with none being higher than 0.54, indicating a reasonable interpretation of the linear regression model. Across all three countries, the correlations range from -0.1 to 0.5."),
+             p("Clusters of moderate correlations are seen between the various satisfaction variables related to institutional performance, possibly suggesting  a general sense of satisfaction with national institutions. Importantly, the correlations between the predictors and trust in the EU are relatively stronger across all three countries. This supports the relevance and empirical justification for including these variables in the regression models.", style = "margin-bottom: 30px;"),
 
- 
              h3("Key Interaction Effects"),
              
-             p("The interaction effect plots visualize how the relationship between a selected predictor and trust in the EU varies across countries. Each colored line represents one country and shows how EU trust changes as the predictor changes. Only the most meaningful and significant interactions are shown.
-The shaded areas around each line represent 95% confidence intervals, indicating uncertainty around the prediction. Wider bands imply less precise estimates and narrower bands indicate higher certainty.
-Use the dropdown menu to explore different interaction effects and understand how specific factors shape EU trust differently across the three countries.", style = "margin-bottom: 30px;"),
+             p("The interaction effect plots visualize how the relationship between a selected predictor and trust in the EU varies across countries. Each colored line represents one country and shows how EU trust changes as the predictor changes. Only the most meaningful and significant interactions are shown. The shaded areas around each line represent 95% confidence intervals, indicating uncertainty around the prediction. Wider bands imply less precise estimates and narrower bands indicate higher certainty. Use the dropdown menu to explore different interaction effects and to understand how specific factors shape EU trust differently across the three countries.", style = "margin-bottom: 30px;"),
              
              # Interaction Plots
              selectInput(
@@ -446,24 +464,26 @@ Use the dropdown menu to explore different interaction effects and understand ho
                  )
              ),
              
-             h3("All Interaction Effects"),
+             h3("Country-Specific Models"),
              
-             p("Besides the pooled multiple linear regression model including a country interaction, we estimated the same model for each country, leaving out the interaction. The findings of these models let us gain insights into what shapes EU trust in each country, highlighting the most significant predictors. These tables represent the regression output for Slovenia, Poland and Germany.", style = "margin-bottom: 30px;"),
+             p("These country-specific models provide insights into the key predictors of EU trust within each country. Here you can see the results of a pooled multiple linear regression model, including year fixed effects, for each country. The heat map below visualizes the regression results for Slovenia, Poland and Germany. To view detailed estimates, please click a field of your choice."),
+             p("Important: Note that there is no full data coverage in 2002 and 2010. Insights into these years cannot be gained with this model. Therefore, the baseline year of estimation is 2004.", style = "margin-bottom: 30px;"),
 
-             # Fixed Effects Models
-             #div(class = "full-width-box",
+             # Fixed Effects Models (Deleted from Output)
+             # div(class = "full-width-box",
              #    h3("Effects of Variables in each Country"),
              #    fluidRow(
              #      column(4,
              #             h3("Germany"),
              #             div(style = "font-size: 11px;", tableOutput("Model_DE"))),
-            #       column(4,
-            #              h3("Poland"),
+             #      column(4,
+             #              h3("Poland"),
              #             div(style = "font-size: 11px;", tableOutput("Model_PL"))),
              #      column(4,
              #             h3("Slovenia"),
              #             div(style = "font-size: 11px;", tableOutput("Model_SI"))),
-              #   )),
+             #      )),
+             
              div(class = "full-width-box",
                  #h3("Heatmap: Regression Coefficients by Country and Variable Group"),
                  plotOutput("coef_heatmap", click = "heatmap_click", height = "750px"),
@@ -474,54 +494,129 @@ Use the dropdown menu to explore different interaction effects and understand ho
              ),
              
              h4("Main Effects in Germany"),
-             p("In Germany, EU trust is most strongly predicted by satisfaction with the national government, gender, and trust in the legal system. Females tend to have higher EU trust. Age has a stronger effect in Germany than in the other two countries. Older people are significantly less trusting of the EU. As expected, higher support for EU unification is positively associated with EU trust. Temporal effects show that trust dropped notably in 2014 and 2016 compared to the baseline 2002."),
+             p("In Germany, EU trust is most strongly associated with", strong("satisfaction with the national government, gender, and trust in the legal system.")),
+             ul(
+               li("Females tend to have higher EU trust."),
+               li("Age appears to have a stronger effect in Germany than in the other two countries. Older people are significantly less trusting of the EU."),
+               li("As expected, higher support for EU unification is positively associated with EU trust."),
+               li("Temporal effects indicate that trust dropped notably in 2014 and 2016 compared to the baseline 2004.")
+             ),
              
              h4("Main Effects in Poland"),
-             p("In Poland, trust in the EU is most strongly shaped by support for EU unification, trust in the legal system, and political interest. Interestingly, higher satisfaction with the national government is associated with lower EU trust which suggests a substitution effect where citizens may either trust the EU or their national government, but not both. Being female, having more positive attitudes toward immigrants, and holding more left-leaning political views are also associated with higher EU trust, even though these effects are smaller. Over time, EU trust declined significantly, especially in 2014, 2016, 2020, and 2022, even after controlling for individual attitudes and demographics. Despite higher religious attendance in Poland compared to the other countries, it has only a small but statistically significant negative effect on EU trust."),
+             p("In Poland, trust in the EU is most closely related to", strong("support for EU unification, trust in the legal system, and political interest.")),
+             ul(
+               li("Interestingly, higher satisfaction with the national government is associated with lower EU trust which suggests a substitution effect where citizens may either trust the EU or their national government, but not both."),
+               li("Being female, having more positive attitudes toward immigrants, and holding more left-leaning political views are also associated with higher EU trust, even though these effects are smaller."),
+               li("Over time, EU trust declined significantly, especially in 2014, 2016, 2020, and 2022, even after controlling for individual attitudes and demographics."),
+               li("Despite higher religious attendance in Poland compared to the other countries, it shows only a small but statistically significant negative association with EU trust.")
+             ),
              
              h4("Main Effects in Slovenia"),
-             p("In Slovenia, the strongest predictors are trust in the legal system, satisfaction with the national government, EU support, gender and political interest. Among these, institutional trust and political interest seem particularly influential. EU trust declined after 2002, especially in 2018. Unlike in Poland, religious attendance is weakly but positively associated with higher trust in the EU, even though the effect is small and less significant. Immigration attitudes have a smaller and less significant impact compared to Poland. Additionally, older people tend to have less trust in the EU, suggesting a decline in EU trust with increasing age."),
-             
-             
+             p("In Slovenia, the strongest associations with EU trust are found for", strong("trust in the legal system, satisfaction with the national government, EU support, gender and political interest.")),
+             ul(
+               li("Among these, institutional trust and political interest seem particularly influential."),
+               li("EU trust declined after 2002, especially in 2018."),
+               li("Unlike in Poland, religious attendance is weakly but positively associated with higher trust in the EU, even though the effect is small and less significant."),
+               li("Immigration attitudes have a smaller and less significant impact compared to Poland."),
+               li("Additionally, older people tend to have less trust in the EU, suggesting a decline in EU trust with increasing age.")
+             )
+
          )
        ),
       
-      # ----------- SERVER LOGIC: IMPLICATION TAB ------------
+    # ----------- TAB: IMPLICATIONS -----------
 
-       # Implications
-       "implications"  = tagList(
+       "implications" = tagList(
          div(class = "page-section",
-             h2("What do the findings imply for the EU?"),
+             h2("What Do the Findings Imply for the EU?"),
              
              p("Our findings reveal that trust in the EU is shaped by an interplay of political attitudes, national institutional trust, ideological factors, and demographic characteristics. While some factors, like trust in the legal system, are consistently influential, others, such as government satisfaction, vary considerably across Slovenia, Poland, and Germany."),
              p("These results have important implications for EU strategies, national policymakers, and efforts to build public trust. Efforts to foster EU trust must be tailored to specific national contexts and institutional landscapes."),
              
-             div(class = "flex-two-boxes",
-                 div(class = "box-content",
-                     p(strong("Institutional trust is a central driver of EU trust."), "Confidence in the national legal system strongly predicts EU trust. This is particularly true in Poland and Slovenia, suggesting that EU legitimacy is closely linked to national institutional performance, also including the health care system, education system and national government.")
-                 ),
-                 div(class = "box-content",
-                     p(strong("National satisfaction and EU trust can either reinforce or substitute each other."), "Higher satisfaction with the national government tends to increase EU trust in Slovenia and particularly Germany. However, the opposite effect is observed in Poland, where greater satisfaction with the national government correlates with lower EU trust. This suggests a competitive dynamic between the EU and the national government, in which citizens place trust in either the national government or the EU, but not both.")
-                 )
-             ),
-             
-             div(class = "flex-two-boxes",
-                 div(class = "box-content",
-                     p(strong("Political ideology influences EU trust but varies across countries."), "In Germany and Poland, individuals with right-leaning political views tend to trust the EU less, consistent with common narratives of right-wing parties. In contrast, right-leaning individuals in Slovenia tend to have more trust in the EU. This highlights how national political contexts and parties’ narratives shape perceptions of the EU.")
-                 ),
-                 div(class = "box-content",
-                     p(strong("Gender plays a consistent role in shaping EU trust."), "In all three countries, women tend to place higher trust in the EU, with the effect being strongest in Germany. This suggests gender-related attributes, with women perceiving the EU as a guarantor of security, rights, and stability.")
-                 )
-             ),
-             
-             div(class = "flex-two-boxes",
-                 div(class = "box-content",
-                     p(strong("Age and education show varying effects."), "Age consistently shows significant but country-specific effects. Older citizens in Poland tend to be more trusting, whereas in Germany and Slovenia, they are less trusting in the EU. This hints at generational divides in EU sentiment. Education, by contrast, is not a significant predictor in any of the countries, suggesting that EU trust is influenced more by political and institutional factors than by educational attainment.")
-                 ),
-                 div(class = "box-content",
-                     p(strong("Temporal dynamics reflect shared and country-specific shocks."), "Declines in trust in the EU between 2014 and 2016 across all countries may be linked to broader EU crises such as the migration crisis and Brexit. However, Poland’s decline in 2020 and 2022 or Slovenia’s drop in 2018 suggest that domestic political or institutional events also play a key role in shaping EU trust.")
-                 )
+             tabsetPanel(
+               type = "tabs",
+               
+               tabPanel("Summary Findings",
+                        
+                        h3("What can we differ from the findings of this analysis?"),
+                        div(class = "flex-two-boxes",
+                            div(class = "box-content",
+                                p(strong("Institutional trust is a central driver of EU trust."), "Confidence in the national legal system strongly predicts EU trust. This is particularly true in Poland and Slovenia, suggesting that perceived EU legitimacy is closely linked to national institutional performance, also including the health care system, education system and the national government.")
+                            ),
+                            div(class = "box-content",
+                                p(strong("National satisfaction and EU trust can either reinforce or substitute each other."), "Higher satisfaction with the national government tends to increase EU trust in Slovenia and particularly Germany. However, the opposite effect is observed in Poland, where greater satisfaction with the national government correlates with lower EU trust. This suggests a competitive dynamic between the EU and the national government, in which citizens place trust in either the national government or the EU, but not both.")
+                            )
+                        ),
+                        
+                        div(class = "flex-two-boxes",
+                            div(class = "box-content",
+                                p(strong("Political ideology influences EU trust but varies across countries."), " In Germany and Poland, individuals with right-leaning political views tend to trust the EU less, consistent with common narratives of right-wing parties. In contrast, right-leaning individuals in Slovenia tend to have more trust in the EU. This highlights how national political contexts and parties’ narratives shape perceptions of the EU.")
+                            ),
+                            div(class = "box-content",
+                                p(strong("Gender plays a consistent role in shaping EU trust."), " In all three countries, women tend to place higher trust in the EU, with the effect being strongest in Germany. This suggests gender-related attributes, with women perceiving the EU as a guarantor of security, rights, and stability.")
+                            )
+                        ),
+                        
+                        div(class = "flex-two-boxes",
+                            div(class = "box-content",
+                                p(strong("Age and education show varying effects."), "Age consistently shows significant but country-specific effects. Older citizens in Poland tend to be more trusting, whereas in Germany and Slovenia, they are less trusting in the EU. This hints at generational divides in EU sentiment. Education, by contrast, is not a statistically significant predictor in any of the countries, suggesting that EU trust is influenced more by political and institutional factors than by educational attainment.")
+                            ),
+                            div(class = "box-content",
+                                p(strong("Temporal dynamics reflect shared and country-specific shocks."), "Declines in trust in the EU between 2014 and 2016 across all countries may be linked to broader EU crises such as the migration crisis and Brexit. However, Poland’s decline in 2020 and 2022 or Slovenia’s drop in 2018 suggest that domestic political or institutional events also play a key role in shaping EU trust.")
+                            )
+                        ),
+                        
+                        p("These results suggest that EU trust is not only shaped by personal attitudes, but also by national contexts and institutional narratives.")
+                        ),
+               
+               tabPanel("Further Questions",
+                        h3("What can Politicians Differ from this Analysis?"),
+                        div(class = "full-width-box",
+                            p(strong("What Are the Differences Between Poland, Germany and Slovenia?")),
+                            p("As it seems, the selection by net recipient or payer status turns out to be very relevant - especially in terms of the Polish \"either-or\" effect between national and EU level. Further research should be done on the indicated  \"substitution relationship\" of trust in the national and international institutions and what this says about the interplay between EU integration and national claims to sovereignty.")
+                            ),
+                    
+                         div(class = "full-width-box",
+                             p(strong("What Role Do Trust and Justice Play?")),
+                             p("Trust in the legal system is a consistent factor. This suggests that trust in the EU is strongly dependent on institutional reliability. The EU could communicate more as a guarantor of justice and stability to strengthen trust, but it does not have the means to reinforce justice other than it does currently. For this reason, this suggestion cannot change the operations of the EU right now and rather reflects on the national governments.")
+                         ),
+                         div(class = "full-width-box",
+                             p(strong("What Role Do Trust and Justice Play?")),
+                             p("Trust in the legal system is a consistent factor. This suggests that trust in the EU is strongly dependent on institutional reliability. The EU could communicate more as a guarantor of justice and stability to strengthen trust, but it does not have the means to reinforce justice other than it does currently. For this reason, this suggestion cannot change the operations of the EU right now and rather reflects on the national governments.")
+                         ),
+                         div(class = "full-width-box",
+                             p(strong("What Do Gender-Specific Differences Tell Us?")),
+                             p("Women consistently show more trust which could be rooted in a stronger desire for social protection, human rights or legal justice, for example. Therefore, we suggest that a more gender-sensitive EU communication could be an effective instrument for increasing trust.")
+                         ),
+                        h3("What are Further Open and Future-Oriented Questions"),
+                        div(class = "full-width-box",
+                            p(strong("How Stable Is Trust in the EU in Times of Crisis?")),
+                            p(" Our findings show that trust dropped notably during major EU-wide crises, such as the 2014–2016 migration and Brexit periods, and during the COVID-19 and Ukraine war context from 2020–2022. This suggests that trust in the EU is vulnerable to external shocks but also highlights that it can be mediated by national institutions and public discourse.")
+                        ),
+                        
+                        div(class = "full-width-box",
+                            p(strong("What Does This Tell Us About EU Legitimacy?")),
+                            p("If trust is strongly linked to trust in national governance and legal systems, EU legitimacy partially depends on the state of national institutions. The EU cannot build public trust in isolation from the performance and credibility of member states’ legal and political systems. For this reason, it seems very important for EU promoters to consider the narratives about the EU that national governments are spreading and which narratives they are evoking about themselves.")
+                        ),
+                        div(class = "full-width-box",
+                            p(strong("How Will These Dynamics Evolve After the 2024 EU Election?")),
+                            p("This remains an open question and an important area for future research. It will be critical to examine whether recent electoral shifts, including rising support for far-right or EU-sceptical parties, change patterns of trust in the EU, particularly among young people and in countries with fluctuating institutional trust. Future developments should also consider countries’ vulnerability to external crises and the state of national institutions. This is particularly relevant in light of the major political events in 2025,, including the inauguration of Donald Trump, the German federal election resulting in Friedrich Merz from the centre-right CDU becoming chancellor and the Polish election with a victory for the conservative candidate Karol Nawrocki.")
+                        ),
+               ),
+               
+               tabPanel("Limitations",
+                        h3("What are the Limitations of this Analysis?"),
+                        div(class = "full-width-box",
+                        ol(
+                          li("Due to data constraints, we are unable to place our findings in the broader context of all EU member states. The study focuses only on Germany, Poland, and Slovenia, which limits the generalizability of the results across the entire EU."),
+                          li("While other factors such as income are likely to influence EU trust as well, they could not be included in the analysis due to incomplete data. As such, our analysis primarily highlights the role of socio-demographics, political attitudes and ideology, offering directional tendencies rather than a fully comprehensive explanation."),
+                          li("Major political events were not directly included in the dataset. Instead, we used year fixed effects to account for changes over time. While this approach captures broader time trends, it does not allow us to link trust dynamics to specific events.")
+                        )
+                        )
+     
+               ),
              )
+      
              
          )
        )
@@ -530,10 +625,9 @@ Use the dropdown menu to explore different interaction effects and understand ho
   })
 
   
-# ----------- OUTPUT LOGIC: TRUST TAB ------------------  
+  # ----------- OUTPUT: TRUST TAB (PLOTS) -----------
   
-# Trust in EU: 
-  # euTrustPlot 
+  # euTrustPlot  
   output$euTrustPlot <- renderPlot({
     trust_trends <- dt_filtered %>%
       filter(cntry %in% c("DE", "PL", "SI")) %>%
@@ -567,8 +661,14 @@ Use the dropdown menu to explore different interaction effects and understand ho
       group_by(age_group, cntry) %>%
       summarise(trstep = mean(trstep, na.rm = TRUE), .groups = "drop") %>%
       ggplot(aes(x = age_group, y = trstep, fill = cntry)) +
-      geom_col(position = "dodge") +
-      scale_fill_manual(values = trust_colors, labels = trust_labels) + 
+      geom_col(position = "dodge", alpha = 0.6) +
+      geom_line(aes(group = cntry, color = cntry), 
+                position = position_dodge(width = 0.9), size = 1) +
+      geom_point(aes(color = cntry), 
+                 position = position_dodge(width = 0.9), size = 2) +
+      scale_fill_manual(values = trust_colors, labels = trust_labels) +
+      scale_color_manual(values = trust_colors, labels = trust_labels) +
+      guides(fill = "none", color = guide_legend(title = "Country")) +
       labs(
         title = if (input$selected_year == "all") {
           "Trust in the EU by Age Group and Country (Average Across Years)"
@@ -582,9 +682,8 @@ Use the dropdown menu to explore different interaction effects and understand ho
       modern_clean_theme()
   })
 
-# ----------- OUTPUT LOGIC: CONTEXT TAB ----------------
+  # ----------- OUTPUT: CONTEXT TAB (PLOTS) -----------
   
-# Context:
   # lrscalePlot
   output$lrscalePlot <- renderPlot({
     dt_filtered %>%
@@ -651,13 +750,13 @@ Use the dropdown menu to explore different interaction effects and understand ho
       theme(legend.position = "bottom")
   })
   
-# ----------- OUTPUT LOGIC: INSIGHTS TAB ------------------
+  # ----------- OUTPUT: INSIGHTS TAB (UI & PLOTS) -----------
   
-# Insights:
   # insight_plots
   output$insight_plots <- renderUI({
     switch(input$insight_category,
            
+           # IF Ideology
            "Ideology" = tagList(
              div(class = "full-width-box",
                  h3("Key Findings"),
@@ -691,6 +790,7 @@ Use the dropdown menu to explore different interaction effects and understand ho
                  div(class = "box-content", p("")))
              ),
            
+           # IF Socio-Demographics
            "Socio-Demographics" = tagList(
              div(class = "full-width-box",
                  h3("Key Findings"),
@@ -711,6 +811,7 @@ Use the dropdown menu to explore different interaction effects and understand ho
              )
            ),
            
+           # IF Political Attitudes
            "Political Attitudes" = tagList(
              div(class = "full-width-box",
                  h3("Key Findings"),
@@ -744,7 +845,7 @@ Use the dropdown menu to explore different interaction effects and understand ho
     )
   })
   
-  
+  # Plot 
   # plot_age_group
   output$plot_age_group <- renderPlot({
     dt_filtered %>%
@@ -909,221 +1010,9 @@ Use the dropdown menu to explore different interaction effects and understand ho
   
  
   
-# ----------- OUTPUT LOGIC: COMPARISON TAB ---------------
-  
-# Cross-Country Comparison
-  
-  # Country-Specific Models
-  # Model_DE
-  modelDE <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + as.factor(year) + age_group + lrscale + polintr_rev + eduyrs_winsor,
-                data = subset(dt_filtered, cntry == "DE"))
-  tidyDE <- tidy(modelDE)
-  
-  # Model_PL
-  modelPL <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + as.factor(year) + age_group + lrscale + polintr_rev + eduyrs_winsor,
-                data = subset(dt_filtered, cntry == "PL"))
-  tidyPL <- tidy(modelPL)
-  
-  # Model_SI
-  modelSI <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + as.factor(year) + age_group + lrscale + polintr_rev + eduyrs_winsor,
-                data = subset(dt_filtered, cntry == "SI"))
-  tidySI <- tidy(modelSI)
-  
-  # Neuer Plot
-  get_model_coef <- function(data, country_name) {
-    model <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl +
-                  imwbcnt + rlgatnd_rev + gndr + as.factor(year) +
-                  age_group + lrscale + polintr_rev + eduyrs_winsor,
-                data = data[data$cntry == country_name, ])
-    
-    tidy(model) %>%
-      filter(term != "(Intercept)") %>%
-      mutate(
-        country = country_name,
-        term_clean = case_when(
-          grepl("^as\\.factor\\(year\\)", term) ~ paste0("Year: ", gsub("as.factor\\(year\\)", "", term)),
-          term %in% names(var_labels) ~ var_labels[term],
-          TRUE ~ term
-        ))
-  }
-  
-  
-  # globales data_heatmap für Zugriff in der Tabelle
-  data_heatmap <- reactive({
-    coef_all <- bind_rows(
-      get_model_coef(dt_filtered, "DE"),
-      get_model_coef(dt_filtered, "PL"),
-      get_model_coef(dt_filtered, "SI")
-    )
-    
-    # Gruppenzuweisung vorbereiten
-    temp_category_vars <- category_vars
-    names(temp_category_vars)[names(temp_category_vars) == "Socio-Demographics"] <- "Socio-\nDemographics"
-    
-    group_map <- purrr::imap_dfr(temp_category_vars, ~ tibble(term = var_labels[.x], group = .y))
-    
-    # Year-Effekte ergänzen
-    year_terms <- unique(coef_all$term_clean[grepl("^Year: ", coef_all$term_clean)])
-    group_map <- bind_rows(
-      group_map,
-      tibble(term = year_terms, group = "Year Effects")
-    )
-    
-    coef_all %>%
-      filter(term_clean %in% group_map$term) %>%
-      select(term = term_clean, estimate, country) %>%
-      left_join(group_map, by = "term") %>%
-      mutate(
-        term = factor(term, levels = rev(unique(group_map$term))),
-        group = factor(group, levels = c(names(temp_category_vars), "Year Effects"))
-      )
-  })
-  
-    #Plot
-  output$coef_heatmap <- renderPlot({
-    ggplot(data_heatmap(), aes(x = country, y = term, fill = estimate)) +
-      geom_tile(color = "white") +
-      facet_grid(rows = vars(group), scales = "free_y", space = "free_y") +  # Gruppierung
-      scale_x_discrete(position = "top") + 
-      scale_fill_gradient2(low = "#003399", mid = "white", high = "#FF7300", midpoint = 0,
-                           name = "Coefficient") +
-      labs(
-        title = "",
-        x = NULL,, y = NULL
-      ) +
-      theme_minimal() +
-      theme(
-        strip.text.y = element_text(size = 14, face = "bold"),
-        axis.text.x = element_text(size = 14, face = "bold"),
-        axis.text.y = element_text(size = 12),
-        legend.position = "right"
-      )
-  })
-  
-  
-output$selected_variable_table <- renderTable({
-  req(input$heatmap_click)
-  
-  data <- data_heatmap()
-  
-  # Finde nächstgelegene term anhand y-Koordinate
-  data_with_y <- data %>%
-    distinct(term) %>%
-    mutate(y = as.numeric(term))  # Faktorpositionen
-  
-  # Finde den nächsten Wert
-  y_click <- input$heatmap_click$y
-  nearest_term <- data_with_y %>%
-    mutate(diff = abs(y - y_click)) %>%
-    arrange(diff) %>%
-    slice(1) %>%
-    pull(term)
-  
-  req(!is.null(nearest_term))
-  
-  # Maschinenlesbarer Name
-  selected_var <- names(var_labels)[var_labels == nearest_term]
-  if (length(selected_var) == 0 && grepl("^Year: ", nearest_term)) {
-    selected_var <- paste0("as.factor(year)", sub("Year: ", "", nearest_term))
-  }
-  req(length(selected_var) == 1)
-  
-  extract_coef <- function(tidy_df, var_name) {
-    tidy_df %>%
-      filter(term == var_name) %>%
-      transmute(
-        Estimate = round(estimate, 3),
-        `Std. Error` = round(std.error, 3),
-        `p-value` = round(p.value, 3),
-        Signif = symnum(p.value,
-                        cutpoints = c(0, 0.001, 0.01, 0.05, 1),
-                        symbols = c("***", "**", "*", ""))
-      )
-  }
-  
-  row_DE <- extract_coef(tidyDE, selected_var)
-  row_PL <- extract_coef(tidyPL, selected_var)
-  row_SI <- extract_coef(tidySI, selected_var)
-  
-  tibble::tibble(
-    Country = c("DE", "PL", "SI"),
-    Estimate = c(row_DE$Estimate, row_PL$Estimate, row_SI$Estimate),
-    `Std. Error` = c(row_DE$`Std. Error`, row_PL$`Std. Error`, row_SI$`Std. Error`),
-    `p-value` = c(row_DE$`p-value`, row_PL$`p-value`, row_SI$`p-value`),
-    Signif = c(row_DE$Signif, row_PL$Signif, row_SI$Signif)
-  )
-})
-  
- 
- 
-  # Interaction Plots
-  # Model 3a
-  model3a <- lm(trstep ~ (ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + year + agea + I(agea^2) + lrscale + polintr_rev + eduyrs_winsor) * cntry,
-                data = dt_filtered)
-  
-  
-  # Explanations Interactions
-  explanations <- list(
-    euftf = tagList(
-      h3("Effect of EU Unification Support on EU Trust"),
-      ul(
-        li("In all three countries, stronger support for EU unification is clearly associated with higher trust in the EU."),
-        li("The relationship is statistically significant and aligns well with theoretical expectations — higher integration support boosts EU legitimacy."),
-        li("This pattern highlights the foundational role of pro-EU sentiment in fostering trust in EU institutions.")
-      )
-    ),
-    stfgov = tagList(
-      h3("Effect of Government Satisfaction on Trust in the EU by Country"),
-      ul(
-        li("In Poland, satisfaction with the national government negatively affects trust in the EU, which is a surprising and significant result."),
-        li("This suggests that Polish respondents may see the national and EU levels as competing rather than complementary."),
-        li("The effect differs from Germany and Slovenia, where satisfaction with national governance is either neutral or positively related to EU trust.")
-      )
-    ),
-    lrscale = tagList(
-      h3("Effect of Political Placement on Trust in the EU by Country"),
-      ul(
-        li("Political ideology influences EU trust differently across countries."),
-        li("In Germany, respondents on the political right express lower trust in the EU, consistent with conservative patterns."),
-        li("In contrast, in Slovenia, right-leaning individuals show higher trust in the EU, suggesting national political context strongly shapes this relationship.")
-      )
-    ),
-    trstlgl = tagList(
-      h3("Effect of Trust in Legal System on Trust in the EU by Country"),
-      ul(
-        li("Trust in the legal system significantly enhances trust in the EU in all three countries."),
-        li("The effect is especially strong in Slovenia and Poland, emphasizing the importance of institutional confidence beyond national borders."),
-        li("Legal trust appears to act as a general proxy for belief in rule-based governance, extending to EU institutions.")
-      )
-    )
-  )
-  
-  
-  #interactionPlot
-  
-  
-  output$interactionPlot <- renderPlot({
-    selected_var <- input$selected_var
-    
-    interact_plot(model3a,
-                  pred = !!selected_var,
-                  modx = cntry,
-                  plot.points = FALSE,
-                  interval = TRUE,
-                  x.label = var_labels[[selected_var]],
-                  y.label = "Predicted EU Trust",
-                  modx.labels = trust_labels,
-                  colors = trust_colors) +
-      labs(color = "Country") + 
-      modern_clean_theme() +
-      theme(legend.position = "bottom")
-    
-      
-  })
+  # ----------- OUTPUT: COMPARISON TAB -----------
   
   # Correlation Matrixes
-  
-  
   
   # Function without labels
   render_cor_plot_nolabels <- function(cntry_var) {
@@ -1203,7 +1092,7 @@ output$selected_variable_table <- renderTable({
   # Modals
   observeEvent(input$zoom_DE, {
     showModal(modalDialog(
-      title = "Germany – Correlation Matrix",
+      title = "Germany",
       size = "l",
       plotOutput("cor_DE_zoom", height = "600px"),
       easyClose = TRUE
@@ -1212,7 +1101,7 @@ output$selected_variable_table <- renderTable({
   
   observeEvent(input$zoom_PL, {
     showModal(modalDialog(
-      title = "Poland – Correlation Matrix",
+      title = "Poland",
       size = "l",
       plotOutput("cor_PL_zoom", height = "600px"),
       easyClose = TRUE
@@ -1221,31 +1110,203 @@ output$selected_variable_table <- renderTable({
   
   observeEvent(input$zoom_SI, {
     showModal(modalDialog(
-      title = "Slovenia – Correlation Matrix",
+      title = "Slovenia",
       size = "l",
       plotOutput("cor_SI_zoom", height = "600px"),
       easyClose = TRUE
     ))
   })
 
+  # Linear Model Heatmap
+  
+  # Model_DE
+  modelDE <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + as.factor(year) + age_group + lrscale + polintr_rev + eduyrs_winsor,
+                data = subset(dt_filtered, cntry == "DE"))
+  tidyDE <- tidy(modelDE)
+  
+  # Model_PL
+  modelPL <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + as.factor(year) + age_group + lrscale + polintr_rev + eduyrs_winsor,
+                data = subset(dt_filtered, cntry == "PL"))
+  tidyPL <- tidy(modelPL)
+  
+  # Model_SI
+  modelSI <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + as.factor(year) + age_group + lrscale + polintr_rev + eduyrs_winsor,
+                data = subset(dt_filtered, cntry == "SI"))
+  tidySI <- tidy(modelSI)
+  
+  # Global data_heatmap for access in the table
+  data_heatmap <- reactive({
+    coef_all <- bind_rows(
+      get_model_coef(dt_filtered, "DE"),
+      get_model_coef(dt_filtered, "PL"),
+      get_model_coef(dt_filtered, "SI")
+    )
+    
+    # Prepare group assignment
+    temp_category_vars <- category_vars
+    names(temp_category_vars)[names(temp_category_vars) == "Socio-Demographics"] <- "Socio-\nDemographics"
+    
+    group_map <- purrr::imap_dfr(temp_category_vars, ~ tibble(term = var_labels[.x], group = .y))
+    
+    # Supplement year effects
+    year_terms <- unique(coef_all$term_clean[grepl("^Year: ", coef_all$term_clean)])
+    group_map <- bind_rows(
+      group_map,
+      tibble(term = year_terms, group = "Year Effects")
+    )
+    
+    coef_all %>%
+      filter(term_clean %in% group_map$term) %>%
+      select(term = term_clean, estimate, country) %>%
+      left_join(group_map, by = "term") %>%
+      mutate(
+        term = factor(term, levels = rev(unique(group_map$term))),
+        group = factor(group, levels = c(names(temp_category_vars), "Year Effects"))
+      )
+  })
+  
+  # Plot
+  output$coef_heatmap <- renderPlot({
+    ggplot(data_heatmap(), aes(x = country, y = term, fill = estimate)) +
+      geom_tile(color = "white") +
+      facet_grid(rows = vars(group), scales = "free_y", space = "free_y") +  # Gruppierung
+      scale_x_discrete(position = "top") + 
+      scale_fill_gradient2(low = "#003399", mid = "white", high = "#FF7300", midpoint = 0,
+                           name = "Coefficient") +
+      labs(
+        title = "",
+        x = NULL,, y = NULL
+      ) +
+      theme_minimal() +
+      theme(
+        strip.text.y = element_text(size = 14, face = "bold"),
+        axis.text.x = element_text(size = 14, face = "bold"),
+        axis.text.y = element_text(size = 12),
+        legend.position = "right"
+      )
+  })
+  
+  # Table underneath 
+  output$selected_variable_table <- renderTable({
+    req(input$heatmap_click)
+    
+    data <- data_heatmap()
+    
+    # Find nearest term using y-coordinate
+    data_with_y <- data %>%
+      distinct(term) %>%
+      mutate(y = as.numeric(term))  
+    
+    # Find the next value
+    y_click <- input$heatmap_click$y
+    nearest_term <- data_with_y %>%
+      mutate(diff = abs(y - y_click)) %>%
+      arrange(diff) %>%
+      slice(1) %>%
+      pull(term)
+    
+    req(!is.null(nearest_term))
+    
+    # Machine-readable name
+    selected_var <- names(var_labels)[var_labels == nearest_term]
+    if (length(selected_var) == 0 && grepl("^Year: ", nearest_term)) {
+      selected_var <- paste0("as.factor(year)", sub("Year: ", "", nearest_term))
+    }
+    req(length(selected_var) == 1)
+    
+    # Extract what is shown in the plot
+    extract_coef <- function(tidy_df, var_name) {
+      tidy_df %>%
+        filter(term == var_name) %>%
+        transmute(
+          Estimate = round(estimate, 3),
+          `Std. Error` = round(std.error, 3),
+          `p-value` = round(p.value, 3),
+          Signif = symnum(p.value,
+                          cutpoints = c(0, 0.001, 0.01, 0.05, 1),
+                          symbols = c("***", "**", "*", ""))
+        )
+    }
+    
+    row_DE <- extract_coef(tidyDE, selected_var)
+    row_PL <- extract_coef(tidyPL, selected_var)
+    row_SI <- extract_coef(tidySI, selected_var)
+    
+    # Table Output
+    tibble::tibble(
+      Country = c("DE", "PL", "SI"),
+      Estimate = c(row_DE$Estimate, row_PL$Estimate, row_SI$Estimate),
+      `Std. Error` = c(row_DE$`Std. Error`, row_PL$`Std. Error`, row_SI$`Std. Error`),
+      `p-value` = c(row_DE$`p-value`, row_PL$`p-value`, row_SI$`p-value`),
+      Signif = c(row_DE$Signif, row_PL$Signif, row_SI$Signif)
+    )
+})
+  
+  # Interaction Plots
+  
+  # Basis: Model 3a
+  model3a <- lm(trstep ~ (ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + year + agea + I(agea^2) + lrscale + polintr_rev + eduyrs_winsor) * cntry,
+                data = dt_filtered)
   
   
+  # Explanations Interactions
+  explanations <- list(
+    euftf = tagList(
+      h3("Effect of EU Unification Support on EU Trust"),
+      ul(
+        li("In all three countries, stronger support for EU unification is clearly associated with higher trust in the EU."),
+        li("The relationship is statistically significant and aligns well with theoretical expectations —", strong("higher integration support boosts EU legitimacy.")),
+        li("This pattern highlights the foundational role of pro-EU sentiment in fostering trust in EU institutions.")
+      )
+    ),
+    stfgov = tagList(
+      h3("Effect of Government Satisfaction on Trust in the EU by Country"),
+      ul(
+        li(strong("In Poland, satisfaction with the national government negatively affects trust in the EU"), ", which is a surprising and significant result."),
+        li("This suggests that Polish respondents may see the national and EU levels as competing rather than complementary."),
+        li("The effect differs from Germany and Slovenia, where satisfaction with national governance is either neutral or positively related to EU trust.")
+      )
+    ),
+    lrscale = tagList(
+      h3("Effect of Political Placement on Trust in the EU by Country"),
+      ul(
+        li("Political ideology influences EU trust differently across countries."),
+        li("In Germany, respondents on the political right express lower trust in the EU, consistent with conservative patterns."),
+        li("In contrast, in Slovenia, right-leaning individuals show higher trust in the EU, suggesting", strong("national political context strongly shapes this relationship."))
+      )
+    ),
+    trstlgl = tagList(
+      h3("Effect of Trust in Legal System on Trust in the EU by Country"),
+      ul(
+        li(strong("Trust in the legal system significantly enhances trust in the EU in all three countries.")),
+        li("The effect is especially strong in Slovenia and Poland, emphasizing the importance of institutional confidence beyond national borders."),
+        li("Legal trust appears to act as a general", strong("proxy for belief in rule-based governance"), ", extending to EU institutions.")
+      ))
+  )
   
   
-}
+  #interactionPlot
+  output$interactionPlot <- renderPlot({
+    selected_var <- input$selected_var
+    
+    interact_plot(model3a,
+                  pred = !!selected_var,
+                  modx = cntry,
+                  plot.points = FALSE,
+                  interval = TRUE,
+                  x.label = var_labels[[selected_var]],
+                  y.label = "Predicted EU Trust",
+                  modx.labels = trust_labels,
+                  colors = trust_colors) +
+      labs(color = "Country") + 
+      modern_clean_theme() +
+      theme(legend.position = "bottom")
+    
+  })
+} 
 
-dt_filtered %>%
-  filter(cntry == "DE") %>%  # oder "PL", "SI"
-  group_by(year) %>%
-  summarise(complete_cases = sum(complete.cases(
-    trstep, ppltrst, euftf, stfedu, stfgov, stfhlth, trstlgl,
-    imwbcnt, rlgatnd_rev, gndr, year, age_group, lrscale, polintr_rev, eduyrs_winsor
-  )))
 
-
-
-
-# Run the application 
+# ----------- START SHINY APP -----------
 shinyApp(ui = ui, server = server)
 
 

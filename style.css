@@ -101,12 +101,6 @@
       padding: 0;
     }
     
-    /*  Accents */
-    :root {
-      --main: #003399/*#33658a*/
-      --accent: #FF7300;
-      --secondary: #FFCC00/*#f6ae2d;*/
-    }
 
     /* Common spacing around  */
     .page-section {
@@ -117,15 +111,20 @@
 
 /* Title */
 h1, h2, h3, h4 {
-  color: #333333;
   font-weight: 700;
   margin-top: 10px;
   margin-bottom: 10px;
 }
 
-h1, h2, h3, h4 {
-  color: var(--main);
+h1, h2 {
+  color: #333333;
+
 }
+
+h3, h4 {
+  color: #003399;
+}
+
 
 /* Paragraph */
 p {
@@ -135,7 +134,7 @@ p {
 }
 
 /* List */
-    ul {
+    ul, ol {
       font-size: 16px;
       line-height: 1.6;
       margin-bottom: 15px;
@@ -186,6 +185,46 @@ p {
       color: black !important;
       border: 1px solid #ced4da !important;
       box-shadow: none !important;
+    }
+    
+/* Style for subordinate tabs in the content area */
+    .page-section .nav-tabs {
+      border-bottom: 2px solid #ccc;
+      background-color: transparent;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .page-section .nav-tabs > li > a {
+      color: #333333;
+      font-weight: 500;
+      font-size: 14px;
+      border: none;
+      background-color: transparent;
+      padding: 8px 16px;
+      transition: all 0.2s ease;
+    }
+    
+    .page-section .nav-tabs > li > a:hover {
+      color: #003399;
+      background-color: transparent;
+      border: none;
+    }
+    
+    .page-section .nav-tabs > li.active > a,
+    .page-section .nav-tabs > li.active > a:focus,
+    .page-section .nav-tabs > li.active > a:hover {
+      color: #003399;
+      font-weight: 600;
+      background-color: transparent;
+      border: none;
+      border-bottom: 3px solid #003399;
+    }
+    
+    /* Removes white background of tab contents */
+    .tab-content {
+      background-color: transparent;
+      padding-top: 10px;
     }
 
 
