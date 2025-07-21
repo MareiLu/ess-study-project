@@ -3,7 +3,6 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 
 # To Do:
 *Ändern im Dashboard*
-- Länder-specific models überprüfen, die Coefficients sind falsch
 - Implications kürzen
 
 *Notizen zu Dashboard*
