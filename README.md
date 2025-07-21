@@ -8,6 +8,7 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 - "Immigration attitudes reveal a surprising pattern: Polish respondents appear the most welcoming toward immigrants across age groups, despite their more conservative political orientation. Slovenian respondents are the least welcoming." muss "Polish respondents appear the most welcoming toward immigrants, despite their..." - ich würde das "across age groups" löschen, weil wir hier ja nur auf den Zeittrend schauen und nicht auf die Altersgruppen
 - genauso hier: "Political interest is highest in Germany: Respondents in Germany show consistently higher political interest across all age groups. Interest in Poland is slightly higher than Slovenia, particularly in younger and older age groups." muss zu "Respondents in Germany show consistently higher political interest." und der zweite Satz zu: "Interest in Poland and Slovenia is on the same level, with only small fluctuations. However, a sharp rise in Poland interrupts this pattern."
 - Reihenfolge im "Cross-country comparison" tab muss geändert werden. Erst correlation matrix, dann die heat map mit den drei Ländern models, dann die key interaction effects
+- Im Implications tab: "What can Politicians Differ from this Analysis?" muss "infer"
 
 *Notizen zu Dashboard*
 
