@@ -11,6 +11,7 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 - Im Implications tab: "What can Politicians Differ from this Analysis?" muss "infer", "What can we differ from the findings of this analysis?" muss: "What Can We Infer from the Findings of This Analysis?"
 - Groß-und Kleinschreibung in Überschriften, korrekte Überschriften zum Rauskopieren: What Are the Limitations of This Analysis?, What Can Politicians Infer from This Analysis?, What Are Further Open and Future-Oriented Questions?, What Can We Infer from the Findings of This Analysis?
 - Der eine satz bei "Sumary Findings" ganz unten müsste rausgelöscht werden: These results suggest that EU trust is not only shaped by personal attitudes, but also by national contexts and institutional narratives.
+- Länder-specific models überprüfen, die Coefficients sind falsch
 
 *Notizen zu Dashboard*
 
