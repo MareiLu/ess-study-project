@@ -3,15 +3,8 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 
 # To Do:
 *Ändern im Dashboard*
-- "On an aggregate level, all countries show a general downward trend with the youngest people >18 having the highest trust in the EU" muss "<18"
-- "Support for further EU unification is broadly positive: Respondents in all three countries generally want the EU to move forward, with Poland showing the strongest support. After 2014, all countries followed a similar upward trend, though support declined again slightly after 2020." muss "with Poland showing the strongest support until 2014"
-- "Immigration attitudes reveal a surprising pattern: Polish respondents appear the most welcoming toward immigrants across age groups, despite their more conservative political orientation. Slovenian respondents are the least welcoming." muss "Polish respondents appear the most welcoming toward immigrants, despite their..." - ich würde das "across age groups" löschen, weil wir hier ja nur auf den Zeittrend schauen und nicht auf die Altersgruppen
-- genauso hier: "Political interest is highest in Germany: Respondents in Germany show consistently higher political interest across all age groups. Interest in Poland is slightly higher than Slovenia, particularly in younger and older age groups." muss zu "Respondents in Germany show consistently higher political interest." und der zweite Satz zu: "Interest in Poland and Slovenia is on the same level, with only small fluctuations. However, a sharp rise in Poland interrupts this pattern."
-- Reihenfolge im "Cross-country comparison" tab muss geändert werden. Erst correlation matrix, dann die heat map mit den drei Ländern models, dann die key interaction effects
-- Im Implications tab: "What can Politicians Differ from this Analysis?" muss "infer", "What can we differ from the findings of this analysis?" muss: "What Can We Infer from the Findings of This Analysis?"
-- Groß-und Kleinschreibung in Überschriften, korrekte Überschriften zum Rauskopieren: What Are the Limitations of This Analysis?, What Can Politicians Infer from This Analysis?, What Are Further Open and Future-Oriented Questions?, What Can We Infer from the Findings of This Analysis?
-- Der eine satz bei "Sumary Findings" ganz unten müsste rausgelöscht werden: These results suggest that EU trust is not only shaped by personal attitudes, but also by national contexts and institutional narratives.
 - Länder-specific models überprüfen, die Coefficients sind falsch
+- Implications kürzen
 
 *Notizen zu Dashboard*
 
