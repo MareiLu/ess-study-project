@@ -227,7 +227,23 @@ p {
       padding-top: 10px;
     }
 
+/* Zoom Table Popup */
+    /* Macht das Modal breiter */
+    .modal-dialog {
+      width: 95% !important;
+      max-width: 1200px !important;
+    }
+    
+    /* Gibt der Modal-Body mehr Höhe + Scrollbar */
+    .modal-body {
+      max-height: 80vh;
+      overflow-y: auto;
+    }
 
+/* Red highlight  */
+.highlight {
+  color: #FF7300;
+}
 
 
 /* Responsiveness for smaller screens */
