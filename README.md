@@ -3,7 +3,6 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 
 # To Do:
 *Ändern im Dashboard*
-- Implications kürzen
 
 *Notizen zu Dashboard*
 
