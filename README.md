@@ -4,6 +4,8 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 # To Do:
 *Ändern im Dashboard*
 
+- Im Implications tab: "Iniciatives need to be specifically tailored to the country." --> Initiatives
+
 *Notizen zu Dashboard*
 
 Since it is not possible to come to a clear and inter-country-wide prediction of Trust in the EU, we estimate that there must be other underlying factors involved in shaping this trust.
