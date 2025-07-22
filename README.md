@@ -7,6 +7,8 @@ What shapes trust in the European Union and United Nations in Poland, Germany an
 - Im Implications tab: "Iniciatives need to be specifically tailored to the country." --> Initiatives
 - What Role do Macroeconomic Factors and Connected Claims to Sovereignty Play?
 It seems that the initial country selection by net recipient or payer status appears to be relevant, which is especially noticeable in the Polish "either-or" effect between the national and the EU level. We suggest that the intangible effects we see in this analysis are partly dependent on the economic status of a country within the EU. Further research should be done on the indicated substitution relationship between trust in national and international institutions and what this might imply about the interplay between EU integration and national claims to sovereignty.
+- Alternative Formulierung für "What are Further Open and Future-Oriented Questions" --> "What Are Implications for Policy and Future Research?"
+
 
 
 *Notizen zu Dashboard*
