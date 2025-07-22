@@ -157,7 +157,7 @@ ui <- fluidPage(
   
   # Tagging CSS 
   tags$head(
-    tags$link(rel = "stylesheet", type = "text/css", href = "style.css?v=2.3")
+    tags$link(rel = "stylesheet", type = "text/css", href = "style.css?v=2.5")
   ),
   
   # Define fixed Header
@@ -501,7 +501,7 @@ server <- function(input, output) {
              
              p("Our findings reveal that trust in the EU is shaped by an interplay of political attitudes, national institutional trust, ideological factors, and demographic characteristics. While some factors, like trust in the legal system, are consistently influential, others, such as government satisfaction, vary considerably across Slovenia, Poland, and Germany."),
              
-             div(class = "full-width-box",
+             div(class = "full-width-box red-rim",
              p("Most importantly, this analysis has shown that efforts to foster EU trust must be tailored to specific national contexts and institutional landscapes and have the most effect when tackling lacking trust in the national legal system and general public trust.")),
              
              tabsetPanel(
@@ -1131,7 +1131,7 @@ server <- function(input, output) {
                 data = filter(dt_filtered, cntry == "SI"))
   tidySI <- build_tidy_model(modelSI)
   
-  # Alle tidy-Modelle zusammenführen
+  # Bind all tidy-models together
   coef_all <- bind_rows(
     tidyDE %>% mutate(country = "DE"),
     tidyPL %>% mutate(country = "PL"),
@@ -1139,20 +1139,20 @@ server <- function(input, output) {
   ) %>%
     filter(term != "(Intercept)")
   
-  # Gruppen zuordnen
+  # Assign groups
   temp_category_vars <- category_vars
   names(temp_category_vars)[names(temp_category_vars) == "Socio-Demographics"] <- "Socio-\nDemographics"
   
   group_map <- purrr::imap_dfr(temp_category_vars, ~ tibble(term = var_labels[.x], group = .y))
   
-  # Jahr-Effekte ergänzen
+  # Year fixed effects labels
   year_terms <- unique(coef_all$term_clean[grepl("^Year: ", coef_all$term_clean)])
   group_map <- bind_rows(
     group_map,
     tibble(term = year_terms, group = "Year Effects")
   )
   
-  # Heatmap-Daten vorbereiten
+  # Preparation heatmap-data
   data_heatmap <- reactive({
     coef_all %>%
       filter(term_clean %in% group_map$term) %>%
@@ -1209,6 +1209,7 @@ server <- function(input, output) {
     ))
   })
   
+  # Table Popuo Output
   output$model_table_de <- renderTable({
     tidyDE %>%
       select(term_clean, estimate, std.error, p.value) %>%

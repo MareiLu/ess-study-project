@@ -48,7 +48,6 @@ library(modelr)
 library(interactions)
 library(sandwich)
 library(lmtest)
-
 ```
 
 ```{r raw_data, include=FALSE}
@@ -57,9 +56,9 @@ library(lmtest)
 
 dt_raw <- read_sav(here("data","ESS_all.sav"))
 
-setwd("/Users/test/Documents/Studium/Semester 6/Project Study")
+#setwd("/Users/test/Documents/Studium/Semester 6/Project Study")
 
-dt_raw <- haven::read_sav(file.choose()) #ESS_all.sav
+#dt_raw <- haven::read_sav(file.choose()) #ESS_all.sav
 
 ```
 
@@ -251,6 +250,19 @@ if (!is.na(lambda_index)) {
 write_sav(dt_filtered, "ESS_filtered.sav") 
 ```
 
+
+```{r raw_data, include=FALSE}
+
+# Load Raw Data
+
+dt_filtered <- read_sav(here("data","ESS_filtered.sav"))
+
+#setwd("/Users/test/Documents/Studium/Semester 6/Project Study")
+
+#dt_raw <- haven::read_sav(file.choose()) #ESS_all.sav
+
+```
+
 The variables we will work with are: **cntry** (country), **ppltrst**
 (Most people can be trusted or you can't be too careful) , **euftf** (European
 Union: European unification go further or gone too far) , **stfedu** (state of
@@ -261,16 +273,6 @@ nowadays), **trstlgl** (Trust in the legal system), **imwbcnt**
 (How often attend religious services apart from special occations),
 **gndr** (Gender), **age_group** (Age group), **year** (Ess round)
 
-
-*Nochmal überarbeiten*
-Our hypothesis: Dependend on country, Gender and Age and differing by
-Year... ...the more politically interested and the more left on the
-political scale one is, the more they trust the European Parliament.
-...the more open towards other people one is, the more one trusts the
-EU. ...the more satisfied one is with the state of their own county
-nowadays, the more one trusts in the EP.
-
-The more satisfied one is with their own coutnry's government, the more trust in the EU they have.
 
 -   Political attitudes: clsprty, euftf, stfgov, trstlgl
 -   Ideology: ppltrst, freehms, imwbcnt, rlgatnd
@@ -331,7 +333,7 @@ dt_filtered %>%
 
 # Visualization
 ## Trust in EU - Dependent Variable
-### Trust in EU over Time for all three Countries
+### General Overview over Time
 
 ```{r}
 
@@ -1228,8 +1230,6 @@ mse(model1a, data = dt_filtered)
 
 - Model with age^2 has a slightly better fit.
 
-### Interpretation - Ab hier weiter in Interpretationen
-
 **Model Overview**
 
 -   **Dependent variable**: `trstep` – trust in the EU (0–10 scale)
@@ -1344,48 +1344,6 @@ all three countries, but the strength of these predictors varies.
 -   Time trend: slight decline in EU trust over time in Poland and
     Slovenia, but no significant change in Germany.
     
-## Country-Specific Group Models 
-for comparison, because regressions with interactions that give long outputs are hard to interpret
-
-### Baseline Linear Model for Poland
-
-```{r}
-
-model_PL <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + year + age_group,
-               data = filter(dt_filtered, cntry == "PL"))
-
-summary(model_PL)
-```
-
--   stfedu are not statistically significant
--   trstlgl, euftf, clsprty and gender are strongest predictors
-
-### Baseline Linear Model for Slovenia
-
-```{r}
-
-model_SI <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + year + age_group,
-               data = filter(dt_filtered, cntry == "SI"))
-
-summary(model_SI)
-```
-
--imwbcnt not statistically significant -trstlgl, gndr, clsprty stongest
-predictors
-
-### Baseline Linear Model for Germany
-
-```{r}
-
-model_DE <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + year + age_group, 
-               data = filter(dt_filtered, cntry == "DE"))
-
-summary(model_DE)
-```
-
--year not statistically significant -stfgov, trstlgl, gndr strongest
-predictors
-
 ## Adding other variables not included in LASSO (left-right scale)
 
 ```{r}
@@ -1413,6 +1371,51 @@ coeftest(model3a, vcov = vcovHC(model3a, type = "HC1"))
 ```
 
 - among all models, model 3a has the lowest MSE
+
+## Country-Specific Group Models 
+for comparison, because regressions with interactions that give long outputs are hard to interpret
+
+### Baseline Linear Model for Poland
+
+```{r}
+
+model_PL <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr  + age_group + lrscale  + polintr_rev + eduyrs_winsor + as.factor(year),
+               data = filter(dt_filtered, cntry == "PL"))
+
+summary(model_PL)
+
+```
+
+-   stfedu are not statistically significant
+-   trstlgl, euftf, clsprty and gender are strongest predictors
+
+### Baseline Linear Model for Slovenia
+
+```{r}
+
+model_SI <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + age_group + lrscale  + polintr_rev + eduyrs_winsor + as.factor(year),
+               data = filter(dt_filtered, cntry == "SI"))
+
+summary(model_SI)
+```
+
+-imwbcnt not statistically significant -trstlgl, gndr, clsprty stongest
+predictors
+
+### Baseline Linear Model for Germany
+
+```{r}
+
+model_DE <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + age_group + lrscale  + polintr_rev + eduyrs_winsor + as.factor(year), 
+               data = filter(dt_filtered, cntry == "DE"))
+
+summary(model_DE)
+```
+
+-year not statistically significant -stfgov, trstlgl, gndr strongest
+predictors
+
+
 
 ## Models Divided by Variable Groups
 ###Political Attitudes 

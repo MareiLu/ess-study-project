@@ -240,10 +240,17 @@ p {
       overflow-y: auto;
     }
 
-/* Red highlight  */
-.highlight {
-  color: #FF7300;
-}
+/* Red highlight */
+    /* Text */
+    .highlight {
+      color: #FF7300;
+    }
+    
+    /*Box*/
+    .red-rim {
+      border: 1.5px solid #FF7300;
+    }
+
 
 
 /* Responsiveness for smaller screens */
