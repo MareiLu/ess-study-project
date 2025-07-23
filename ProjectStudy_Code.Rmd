@@ -1124,11 +1124,11 @@ summary(model1)
 # With quadratic term of age 
 model1a <- lm(trstep ~ ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + year + agea + I(agea^2) + lrscale + polintr_rev + eduyrs_winsor + cntry,
              data = dt_filtered)
-summary(model1a)
+summary(model2)
 
 # MSE
 mse(model1, data = dt_filtered)
-mse(model1a, data = dt_filtered) #better model fit
+mse(model2, data = dt_filtered) #better model fit
 
 
 ```
@@ -1227,6 +1227,7 @@ summary(model4)
 coeftest(model3, vcov = vcovHC(model3, type = "HC1"))
 
 coeftest(model4, vcov = vcovHC(model4, type = "HC1"))
+
 ```
 
 - Legal system trust, EU optimism, and satisfaction with national institutions drive EU trust in all three countries, but the strength of these predictors varies:
