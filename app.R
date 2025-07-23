@@ -502,7 +502,7 @@ server <- function(input, output) {
              p("Our findings reveal that trust in the EU is shaped by an interplay of political attitudes, national institutional trust, ideological factors, and demographic characteristics. While some factors, like trust in the legal system, are consistently influential, others, such as government satisfaction, vary considerably across Slovenia, Poland, and Germany."),
              
              div(class = "full-width-box red-rim",
-             p("Most importantly, this analysis has shown that efforts to foster EU trust must be tailored to specific national contexts and institutional landscapes and have the most effect when tackling lacking trust in the national legal system and general public trust.")),
+             p("Most importantly, this analysis has shown that efforts to foster EU trust must be tailored to specific national contexts and institutional landscapes and have the most effect when tackling lacking public trust in the national legal system.")),
              
              tabsetPanel(
                type = "tabs",
@@ -544,16 +544,16 @@ server <- function(input, output) {
                         ),
                         
                         div(class = "full-width-box",
-                            p(strong(span("Iniciatives need to be specifically tailored to the country.", class = "highlight"))),
+                            p(strong(span("Initiatives need to be specifically tailored to the country.", class = "highlight"))),
                             p("This analysis has shown that there are many factors are influencing Trust in the EU. Some of these factors have a stronger influence than others. Therefore, there cannot be one suggestion to raise Trust in the EU, but rather tackle specific aspects which have a strong influence and which might differ between countries. Especially the example of Poland has shown, that the way in which such issues need to be tackled, require a specific tailoring and handling.")
                             )
                         ),
                
                tabPanel("Further Questions",
-                        h3("What Further Questions Can We Ask in Connection to This Analysis?", style = "margin-bottom: 30px;"),
+                        h3("What Are Implications for Policy and Future Research?", style = "margin-bottom: 30px;"),
                         div(class = "full-width-box",
                             p(strong("What Role do Macroeconomic Factors and Connected Claims to Sovereignty Play?")),
-                            p("It seems that the initial country selection by net recipient or payer status turns out to be very relevant - especially in terms of the Polish \"either-or\" effect between the national and the EU level. We suggest that the intangible effects we see in this analysis are partly dependent on the economic status of a country within the EU. Further research should be done on the indicated  \"substitution relationship\" of trust in the national and international institutions and what this tells about the interplay between EU integration and national claims to sovereignty.")
+                            p("It seems that the initial country selection by net recipient or payer status appears to be relevant, which is especially noticeable in the Polish \"either-or\" effect between the national and the EU level. We suggest that the intangible effects we see in this analysis are partly dependent on the economic status of a country within the EU. Further research should be done on the indicated substitution relationship between trust in national and international institutions and what this might imply about the interplay between EU integration and national claims to sovereignty.")
                             ),
                     
                          div(class = "full-width-box",
@@ -1248,10 +1248,15 @@ server <- function(input, output) {
    
   # Interaction Plots
   
-  # Basis: Model 3a
-  model3a <- lm(trstep ~ (ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + rlgatnd_rev + gndr + year + agea + I(agea^2) + lrscale + polintr_rev + eduyrs_winsor) * cntry,
-                data = dt_filtered)
-  
+  # Basis: Model 3
+  model3 <- lm(
+    trstep ~ (ppltrst + euftf + stfedu + stfgov + stfhlth + trstlgl + imwbcnt + 
+                rlgatnd_rev + gndr + year + agea + I(agea^2) + lrscale + 
+                polintr_rev + eduyrs_winsor) * cntry,
+    data = dt_filtered,
+    weights = anweight
+  )
+
   
   # Explanations Interactions
   explanations <- list(
@@ -1293,7 +1298,7 @@ server <- function(input, output) {
   output$interactionPlot <- renderPlot({
     selected_var <- input$selected_var
     
-    interact_plot(model3a,
+    interact_plot(model3,
                   pred = !!selected_var,
                   modx = cntry,
                   plot.points = FALSE,
